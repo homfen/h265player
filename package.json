@@ -73,14 +73,10 @@
   },
   "files": [
     "dist/goldplay-h265-sdk.js",
-    "dist/goldplay-h265.css"
+    "dist/goldplay-h265.css",
+    "dist/lib/*.*"
   ],
-  "keywords": [
-    "h265",
-    "video",
-    "player",
-    "webassmebly"
-  ],
+  "keywords": ["h265", "video", "player", "webassmebly"],
   "author": "goldvideo",
   "license": "ISC"
 }
