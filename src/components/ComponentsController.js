@@ -40,7 +40,9 @@ class ComponentsController extends BaseController {
 
   run() {
     const that = this
-    this.controlBarController.run()
+    if (this.controlBarController) {
+      this.controlBarController.run()
+    }
     // add to register new component method
     for (let key in CONPONENTS_MAP) {
       if (that[key] && typeof that[key].registerMethod === 'function') {

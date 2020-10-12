@@ -31,6 +31,7 @@ class Player extends BaseClass {
   mode = Config.mode;
   $container = null;
   componentsController = null;
+  controlBar = false;
   controlBarController = null;
   controlBarHeight = 50;
   alertError = null;
@@ -102,6 +103,7 @@ class Player extends BaseClass {
         : this.maxBufferLength;
     this.autoPlay =
       options.autoPlay !== undefined ? options.autoPlay : this.autoPlay;
+    this.controlBar = options.controlBar || this.controlBar;
     this.controlBarAutoHide =
       options.controlBarAutoHide !== undefined
         ? options.controlBarAutoHide
@@ -219,20 +221,24 @@ class Player extends BaseClass {
     this.addEl();
     this.setDataController();
     this.setLoadData();
-    this.setComponentsController();
     this.setLoadController();
-    this.setControlBarController();
-    this.componentsController.setControlBarController(
-      this.controlBarController,
-    );
-    this.setAlertError();
+
+    this.setComponentsController();
+    if (this.controlBar !== false) {
+      this.setControlBarController();
+      this.componentsController.setControlBarController(
+        this.controlBarController,
+      );
+    }
     this.setProcessorController();
+    this.setAlertError();
+    this.componentsController.drawPoster();
+
     this.setImagerPlayer();
     this.setAudioPlayer();
     this.setAction();
     this.setStreamController();
 
-    this.componentsController.drawPoster();
     if (this.preload) {
       this.run();
     }
@@ -318,6 +324,11 @@ class Player extends BaseClass {
     });
     this.events.on(Events.PlayerThrowError, errors => {
       throwError.apply(this, errors);
+    });
+    this.events.on(Events.PlayerTimeUpdate, time => {
+      if (this.options.onTimeupdate) {
+        this.options.onTimeupdate(time);
+      }
     });
   }
   reset(value) {

@@ -30,12 +30,10 @@ class Decode {
     // self.importScripts(libPath + 'TAppDecoderStatic.js')
     self.importScripts(libPath + 'libffmpeg.js');
     self.Module.onRuntimeInitialized = function() {
-      console.log('wasm loaded');
+      // console.log('wasm loaded');
       if (!Module._web_decoder_open) {
-        console.log('ffmpeg decoder');
         self.decode.decodeTool = new FFmpegDecode(self.decode, this.event);
       } else {
-        console.log('pcw decoder');
         self.decode.decodeTool = new PCWDecode(self.decode, this.event);
       }
       self.decode.openDecode();
@@ -48,7 +46,6 @@ class Decode {
         this.p = this.decodeTool.openDecode(this.codec);
         this.status = true;
       }
-      console.log('opendecode');
     } catch (e) {
       console.error(e);
     }
