@@ -45,14 +45,14 @@
             return this.buildPath + 'lib/';
           },
           get src() {
-            return this.basePath + '/data/video2/playlist.m3u8';
+            return this.basePath + '/data/h264/test.m3u8';
           },
         };
         let el = doc.querySelector('.play-container');
         let player = new h265player(el, {
           sourceURL: Config.src,
           type: 'HLS',
-          codec: 1,
+          codec: 0,
           libPath: Config.libPath,
           playBackRate: 1,
         });

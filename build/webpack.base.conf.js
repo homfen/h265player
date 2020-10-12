@@ -1,18 +1,18 @@
 /* eslint-env node */
-const path = require('path')
-const webpack = require('webpack')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
-const Webpack2Polyfill = require('webpack2-polyfill-plugin')
+const path = require('path');
+const webpack = require('webpack');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const Webpack2Polyfill = require('webpack2-polyfill-plugin');
 // const CopyPlugin = require('copy-webpack-plugin')
-const MiniCssExtractPlugin = require("mini-css-extract-plugin")
-const StyleLintPlugin = require('stylelint-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const StyleLintPlugin = require('stylelint-webpack-plugin');
 
-const pkgJson = require('../package.json')
+const pkgJson = require('../package.json');
 
-const basePath = path.resolve(__dirname, '../')
-const buildPath = path.resolve(basePath, './build')
-const distPath = path.resolve(basePath, './dist')
+const basePath = path.resolve(__dirname, '../');
+const buildPath = path.resolve(basePath, './build');
+const distPath = path.resolve(basePath, './dist');
 
 module.exports = {
   entry: {
@@ -21,31 +21,28 @@ module.exports = {
     //   path.resolve(basePath, './dist/lib/mux.js'),
     //   path.resolve(basePath, './dist/lib/jmuxer.js')
     // ],
-    'goldplay-h265-sdk': [
-      path.resolve(basePath, './src/entry') // string | object | array
+    h265player: [
+      path.resolve(basePath, './src/entry'), // string | object | array
     ],
-    'goldplay-h265-polyfill': [
+    'h265player-polyfill': [
       '@babel/polyfill',
-      path.resolve(basePath, './src/index') // string | object | array
-    ]
-	},
+      path.resolve(basePath, './src/index'), // string | object | array
+    ],
+  },
   // Here the application starts executing
   // and webpack starts bundling
   output: {
     // options related to how webpack emits results
     filename: '[name].js',
-		chunkFilename: '[name].js',
+    chunkFilename: '[name].js',
     path: distPath, // string
     // the target directory for all output files
     // must be an absolute path (use the Node.js path module)
 
-    // filename: 'goldplay-h265.js', // string
-    // the filename template for entry chunks
-
-    library: 'GoldPlay', // string,
+    library: 'h265player', // string,
     // the name of the exported library
 
-    libraryTarget: 'umd' // universal module definition
+    libraryTarget: 'umd', // universal module definition
     // the type of the exported library
     // libraryTarget: "amd",
     // libraryExport: "default",
@@ -61,11 +58,11 @@ module.exports = {
         exclude: /(node_modules|bower_components)/,
         use: {
           loader: 'babel-loader',
-					options: {
-						compact: false,
+          options: {
+            compact: false,
             plugins: [
               'dynamic-import-webpack',
-              // "@babel/plugin-proposal-class-properties", 
+              // "@babel/plugin-proposal-class-properties",
               // "@babel/plugin-transform-runtime"
             ],
             presets: [
@@ -76,13 +73,13 @@ module.exports = {
                     chrome: '56',
                     ie: '10',
                     edge: '13',
-                    firefox: '45'
-                  }
-                }
-              ]
-            ]
-          }
-        }
+                    firefox: '45',
+                  },
+                },
+              ],
+            ],
+          },
+        },
       },
 
       {
@@ -92,8 +89,8 @@ module.exports = {
           {
             loader: MiniCssExtractPlugin.loader,
             options: {
-              publicPath: distPath + '/css/'
-            }
+              publicPath: distPath + '/css/',
+            },
           },
           // {
           //   loader: 'style-loader',
@@ -103,20 +100,20 @@ module.exports = {
             options: {
               // modules: true,
               importLoaders: 1,
-            }
+            },
           },
           {
             loader: 'postcss-loader',
             options: {
               sourceMap: true,
               config: {
-                path: buildPath + '/postcss.config.js'
-              }
-            }
-          }
-        ]
-      }
-    ]
+                path: buildPath + '/postcss.config.js',
+              },
+            },
+          },
+        ],
+      },
+    ],
   },
 
   // performance: {
@@ -163,16 +160,18 @@ module.exports = {
 
   plugins: [
     new CleanWebpackPlugin({
-      cleanOnceBeforeBuildPatterns: [distPath + '/*.js']
+      cleanOnceBeforeBuildPatterns: [distPath + '/*.js'],
     }),
 
     new webpack.DefinePlugin({
-      __VERSION__: JSON.stringify(pkgJson.version)
+      __VERSION__: JSON.stringify(pkgJson.version),
     }),
 
     // new Webpack2Polyfill(),
 
-    new webpack.BannerPlugin('GoldPlay built @' + new Date().toLocaleString()),
+    new webpack.BannerPlugin(
+      'h265player built @' + new Date().toLocaleString(),
+    ),
     // new CopyPlugin([
     //   {
     //     from: path.resolve(basePath, './src/lib/mux.js'),
@@ -188,11 +187,11 @@ module.exports = {
       quiet: false,
     }),
     new MiniCssExtractPlugin({
-      filename: 'goldplay-h265.css',
-      chunkFilename: '[id].css'
-    })
-  ]
+      filename: 'h265player.css',
+      chunkFilename: '[id].css',
+    }),
+  ],
   // list of additional plugins
 
   /* Advanced configuration (click to show) */
-}
+};
