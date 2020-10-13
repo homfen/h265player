@@ -120,7 +120,7 @@ export default class Action extends BaseClass {
     if (videoBuffered && audioBuffered) {
       this.logger.warn('seek', `seek in buffer, time: ${time}, buffer: ${this.player.buffer()[0]}, ${this.player.buffer()[1]}`)
       this.audioPlayer.onSeekedHandler = () => {
-        this.player.play()
+        this.imagePlayer.render(time, false)
       }
       this.audioPlayer.currentTime = time
 

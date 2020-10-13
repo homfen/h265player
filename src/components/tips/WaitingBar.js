@@ -7,9 +7,9 @@
  * @author Jarry
  */
 
-import BaseComponent from '../../base/BaseComponent'
-import { sizeFormat } from '../../utils/Format'
-import Events from '../../config/EventsConfig'
+import BaseComponent from '../../base/BaseComponent';
+import {sizeFormat} from '../../utils/Format';
+import Events from '../../config/EventsConfig';
 
 /* spinner loading */
 // template = this.createTemplate`
@@ -74,7 +74,6 @@ import Events from '../../config/EventsConfig'
 // `
 
 class WaitingBar extends BaseComponent {
-  
   template = this.createTemplate`
   <gp-wait class="goldplay-tip goldplay__waiting-bar" title="${'title'}" data-status="${'status'}">
     <span class="goldplay__waiting-bar--icon">
@@ -87,53 +86,54 @@ class WaitingBar extends BaseComponent {
   </span>
   <gp-speed class="goldplay__waiting-bar--speed">${'speed'}</gp-speed>
   </gp-wait>
-  `
+  `;
   data = {
     title: 'waiting',
     speed: '',
     status: '',
     display: 'show',
-  }
-  options = {}
+  };
+  options = {};
   constructor(options = {}) {
-    super(options)
-    this.options = options
-    Object.assign(this.data, options.data)
-    this.init()
+    super(options);
+    this.options = options;
+    Object.assign(this.data, options.data);
+    this.init();
   }
 
-  initProps() {
-    
-  }
+  initProps() {}
 
   bindEvent() {
     this.events.on(Events.LoaderUpdateSpeed, data => {
       if (this.data.display === 'show') {
-        this.data.speed = sizeFormat.formatBytes(data.speed) + ' /s'
+        this.data.speed = sizeFormat.formatBytes(data.speed) + ' /s';
       }
-    })
+    });
+    this.events.on(Events.StreamDataReady, () => {
+      this.hideWaiting();
+    });
   }
 
   showWaiting() {
-    const cssName = this.options.cssName
-    const $box = this.options.$screenContainer
+    const cssName = this.options.cssName;
+    const $box = this.options.$screenContainer;
     if (!$box.querySelector('.' + cssName.waitingBar)) {
-      $box.prepend(this.element)
+      $box.prepend(this.element);
     }
-    this.data.display = 'show'
-    this.show()
-    this.resetPosition()
+    this.data.display = 'show';
+    this.show();
+    this.resetPosition();
   }
 
   hideWaiting() {
-    const cssName = this.options.cssName
-    const $box = this.options.$screenContainer
+    const cssName = this.options.cssName;
+    const $box = this.options.$screenContainer;
     if ($box.querySelector('.' + cssName.waitingBar)) {
-      this.data.display = 'hide'
-      this.data.speed = 'Loading...'
-      this.hide()
+      this.data.display = 'hide';
+      this.data.speed = 'Loading...';
+      this.hide();
     }
   }
 }
 
-export default WaitingBar
+export default WaitingBar;

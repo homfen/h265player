@@ -64,6 +64,7 @@ export default class ImagePlayer extends BaseClass {
       this.ready = true;
       this.status = 'ready';
       this.events.emit(Events.ImagePlayerReady);
+      this.render(this.imageData.start, false);
     }
     this.events.emit(Events.ImagePlayerBuffeUpdate);
   }
@@ -76,7 +77,7 @@ export default class ImagePlayer extends BaseClass {
   isBuffered(time) {
     return this.imageData.isBuffered(time);
   }
-  render(time) {
+  render(time, next = true) {
     if (time < this.imageData.offset) {
       return;
     }
@@ -92,7 +93,9 @@ export default class ImagePlayer extends BaseClass {
       }
       this.screen.drawFrame(image);
       this.currentTime = image.pts;
-      this.events.emit(Events.ImagePlayerRenderEnd, time, image.duration);
+      if (next) {
+        this.events.emit(Events.ImagePlayerRenderEnd, time, image.duration);
+      }
       return image;
     } else {
       if (this.maxPTS && time >= this.maxPTS + this.fragDuration) {

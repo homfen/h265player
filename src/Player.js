@@ -505,7 +505,7 @@ class Player extends BaseClass {
       this.changing = false;
       this.play();
     }
-    if (this.seeking || (this.autoPlay && !this.paused)) {
+    if (this.autoPlay && !this.paused) {
       this.play();
     }
   }
