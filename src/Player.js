@@ -505,8 +505,11 @@ class Player extends BaseClass {
       this.changing = false;
       this.play();
     }
-    if (this.autoPlay && !this.paused) {
+    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && !this.paused)) {
       this.play();
+    }
+    else {
+      this.events.emit(Events.ControlBarPause);
     }
   }
 
@@ -570,6 +573,7 @@ class Player extends BaseClass {
       this.logger.info('seek', 'seek to time:', time);
       return;
     }
+    this.statusBeforeSeek = this.status;
     this.seekTime = Date.now();
     this.seeking = true;
     this.currentTime = time;
