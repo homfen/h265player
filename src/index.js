@@ -7,7 +7,6 @@
  * @author Jarry
  */
 
-import Player from './GoldPlay'
-import './themes/player.css'
+import Player from './GoldPlay';
 
-export default Player
+export default Player;

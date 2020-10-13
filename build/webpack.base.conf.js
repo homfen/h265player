@@ -87,14 +87,8 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           {
-            loader: MiniCssExtractPlugin.loader,
-            options: {
-              publicPath: distPath + '/css/',
-            },
+            loader: 'style-loader',
           },
-          // {
-          //   loader: 'style-loader',
-          // },
           {
             loader: 'css-loader',
             options: {
@@ -185,10 +179,6 @@ module.exports = {
       files: '**/*.css',
       failOnError: false,
       quiet: false,
-    }),
-    new MiniCssExtractPlugin({
-      filename: 'h265player.css',
-      chunkFilename: '[id].css',
     }),
   ],
   // list of additional plugins
