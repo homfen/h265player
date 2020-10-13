@@ -109,7 +109,7 @@ export default class DataProcessorController extends BaseClass {
     }
     this.logger.info('onStartDemux', 'postMessage to demux');
 
-    if (data && data.arrayBuffer) {
+    if (data && data.arrayBuffer && data.arrayBuffer.byteLength > 0) {
       this.processor.postMessage(
         {
           type: 'startDemux',

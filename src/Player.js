@@ -157,6 +157,7 @@ class Player extends BaseClass {
     const options = Object.assign({}, this.options, {
       $container: this.$container,
       $screenContainer: this.$screenContainer,
+      controlBar: this.controlBar,
       controlBarAutoHide: this.controlBarAutoHide,
       player: this,
     });
@@ -224,12 +225,10 @@ class Player extends BaseClass {
     this.setLoadController();
 
     this.setComponentsController();
-    if (this.controlBar !== false) {
-      this.setControlBarController();
-      this.componentsController.setControlBarController(
-        this.controlBarController,
-      );
-    }
+    this.setControlBarController();
+    this.componentsController.setControlBarController(
+      this.controlBarController,
+    );
     this.setProcessorController();
     this.setAlertError();
     this.componentsController.drawPoster();
