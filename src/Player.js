@@ -533,7 +533,7 @@ class Player extends BaseClass {
       this.logger.info('start play');
       this.status = 'playing';
       this.paused = false;
-      this.action.play(this.currentTime);
+      this.action.play(this.currentTime + this.startPts);
       this.events.emit(Events.PlayerPlay, this);
     }
   }

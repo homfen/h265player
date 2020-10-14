@@ -64,7 +64,11 @@ export default class ImagePlayer extends BaseClass {
       this.ready = true;
       this.status = 'ready';
       this.events.emit(Events.ImagePlayerReady);
-      this.render(this.imageData.start, false);
+      if (this.player.startPts == null) {
+        this.player.startPts = this.imageData.start;
+      }
+      const showTime = this.player.currentTime + this.player.startPts;
+      this.render(showTime, false);
     }
     this.events.emit(Events.ImagePlayerBuffeUpdate);
   }

@@ -104,8 +104,9 @@ export default class Action extends BaseClass {
     }
   }
   setCurrentTime(time) {
-    this.player.currentTime = time
-    this.events.emit(Events.PlayerTimeUpdate, time)
+    const currentTime = time - this.player.startPts;
+    this.player.currentTime = currentTime;
+    this.events.emit(Events.PlayerTimeUpdate, currentTime);
   }
 
   pause() {
