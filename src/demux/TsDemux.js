@@ -58,6 +58,7 @@ class TsDemux {
           self.postMessage({
             type: 'demuxedAAC',
             data: this.audioArray,
+            no: this.no,
           });
           this.audioArray = [];
           self.postMessage({
@@ -71,10 +72,12 @@ class TsDemux {
           self.postMessage({
             type: 'demuxedAAC',
             data: this.audioArray,
+            no: this.no,
           });
           this.audioArray = [];
         }
         //start decode H265
+        this.decode.no = this.no;
         this.decode.push(this.videoArray);
         this.videoArray = [];
         this.previousPes = null;

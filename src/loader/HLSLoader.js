@@ -211,6 +211,13 @@ class HLSLoader extends BaseLoader {
       return;
     }
 
+    if (tsCache[segment.file]) {
+      const data = tsCache[segment.file];
+      this.state = state.IDLE;
+      this.events.emit(Events.LoaderLoaded, data, segment, type, time);
+      return;
+    }
+
     if (!this.checkLoadCondition(segment)) {
       this.state = state.IDLE;
       this.logger.warn(
@@ -237,42 +244,28 @@ class HLSLoader extends BaseLoader {
       return url;
     };
 
-    const _checkCache = url => {
-      const data = tsCache[url];
-      if (data) {
-        this.state = state.IDLE;
-        this.events.emit(Events.LoaderLoaded, data, segment, type, time);
-        return false;
-      }
-      return true;
-    };
-
     const _send = () => {
       if (this.options.player.options.beforeLoad) {
         this.options.player.options
           .beforeLoad(segment.file, this.options.sourceURL)
           .then(url => {
-            if (_checkCache(url)) {
-              this.httpWorker.postMessage({
-                type: 'invoke',
-                fileType: 'ts',
-                method: 'get',
-                name: segment.no,
-                url,
-              });
-            }
+            this.httpWorker.postMessage({
+              type: 'invoke',
+              fileType: 'ts',
+              method: 'get',
+              name: segment.no,
+              url,
+            });
           });
       } else {
         const _url = _getRequestURL(url, segment);
-        if (_checkCache(_url)) {
-          this.httpWorker.postMessage({
-            type: 'invoke',
-            fileType: 'ts',
-            method: 'get',
-            name: segment.no,
-            url: _url,
-          });
-        }
+        this.httpWorker.postMessage({
+          type: 'invoke',
+          fileType: 'ts',
+          method: 'get',
+          name: segment.no,
+          url: _url,
+        });
       }
     };
 
@@ -317,7 +310,7 @@ class HLSLoader extends BaseLoader {
         this.logger.info('loadFile', 'read success', 'data no:', data.name);
         this.state = state.IDLE;
         this.events.emit(Events.LoaderLoaded, data, segment, type, time);
-        tsCache[data.url] = data;
+        tsCache[segment.file] = data;
       } else {
         this.logger.warn(
           'loadFile',

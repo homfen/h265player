@@ -33,16 +33,17 @@ export default class DataProcessorController extends BaseClass {
     processor.onmessage = event => {
       let workerData = event.data;
       let type = workerData.type;
+      let no = workerData.no;
       let data = workerData.data;
       switch (type) {
         case 'dataProcessorReady':
           this.onDataProcessorReady();
           break;
         case 'decoded':
-          this.onDecoded(data);
+          this.onDecoded(data, no);
           break;
         case 'demuxedAAC':
-          this.onDemuxedAAC(data);
+          this.onDemuxedAAC(data, no);
           break;
         case 'partEnd':
           this.onPartEnd(data);
@@ -93,8 +94,8 @@ export default class DataProcessorController extends BaseClass {
   onMaxPTS(data) {
     this.events.emit(Events.PlayerMaxPTS, data.maxAudioPTS, data.maxVideoPTS);
   }
-  onDemuxedAAC(pes) {
-    this.events.emit(Events.DemuxAAC, pes);
+  onDemuxedAAC(pes, no) {
+    this.events.emit(Events.DemuxAAC, pes, no);
   }
   onDataProcessorReady() {
     if (this.player.seeking || this.player.reseting) {
@@ -114,6 +115,7 @@ export default class DataProcessorController extends BaseClass {
         {
           type: 'startDemux',
           data: data.arrayBuffer,
+          no: data.no,
           isLast: this.isLast,
         },
         [data.arrayBuffer.buffer],
@@ -122,11 +124,11 @@ export default class DataProcessorController extends BaseClass {
       this.logger.error('onStartDemux', 'data is null', 'data:', data);
     }
   }
-  onDecoded(data) {
+  onDecoded(data, no) {
     if (this.player.reseting) {
       return;
     }
-    this.events.emit(Events.DecodeDecoded, data);
+    this.events.emit(Events.DecodeDecoded, data, no);
   }
   onPartEnd(data) {
     this.events.emit(Events.DecodeApppendEnd, data);

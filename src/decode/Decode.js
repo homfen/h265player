@@ -99,6 +99,7 @@ class Decode {
         self.postMessage({
           type: 'decoded',
           data: this.yuvArray,
+          no: this.no,
         });
         this.yuvArray = [];
       }
@@ -108,6 +109,7 @@ class Decode {
         self.postMessage({
           type: 'decoded',
           data: this.yuvArray,
+          no: this.no,
         });
         this.yuvArray = [];
       }
