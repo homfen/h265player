@@ -576,7 +576,7 @@ class Player extends BaseClass {
     this.seekTime = Date.now();
     this.seeking = true;
     this.currentTime = time;
-    this.action.seek(time);
+    this.action.seek(time + this.startPts);
   }
   get muted() {
     return this.#muted;
