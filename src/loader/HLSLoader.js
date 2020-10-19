@@ -17,7 +17,9 @@ import Events from '../config/EventsConfig';
 import Utils from '../utils/Utils';
 import {Parser} from 'm3u8-parser';
 
-const tsCache = {};
+const tsCache = {
+  length: 0,
+};
 
 class HLSLoader extends BaseLoader {
   state = state.IDLE;
@@ -170,15 +172,14 @@ class HLSLoader extends BaseLoader {
       return false;
     }
     // max duration limit
-    if (
-      this.dataController.getLoadDataBufferPool().bufferDuration >
-      this.maxBufferDuration
-    ) {
+    const bufferDuration = this.dataController.getLoadDataBufferPool()
+      .bufferDuration;
+    if (bufferDuration >= this.maxBufferDuration) {
       this.logger.info(
         'checkLoadCondition',
         'stop load next segment.',
         'bufferDuration:',
-        this.dataController.getLoadDataBufferPool().bufferDuration,
+        bufferDuration,
         'maxBufferDuration:',
         this.maxBufferDuration,
       );
@@ -211,13 +212,6 @@ class HLSLoader extends BaseLoader {
       return;
     }
 
-    if (tsCache[segment.file]) {
-      const data = tsCache[segment.file];
-      this.state = state.IDLE;
-      this.events.emit(Events.LoaderLoaded, data, segment, type, time);
-      return;
-    }
-
     if (!this.checkLoadCondition(segment)) {
       this.state = state.IDLE;
       this.logger.warn(
@@ -228,6 +222,13 @@ class HLSLoader extends BaseLoader {
         'type:',
         type,
       );
+      return;
+    }
+
+    if (tsCache[segment.file]) {
+      const data = tsCache[segment.file];
+      this.state = state.IDLE;
+      this.events.emit(Events.LoaderLoaded, data, segment, type, time);
       return;
     }
 
@@ -310,7 +311,13 @@ class HLSLoader extends BaseLoader {
         this.logger.info('loadFile', 'read success', 'data no:', data.name);
         this.state = state.IDLE;
         this.events.emit(Events.LoaderLoaded, data, segment, type, time);
-        tsCache[segment.file] = data;
+        if (tsCache.length < BUFFER.maxSegment) {
+          tsCache[segment.file] = data;
+        } else {
+          const first = Object.keys(tsCache)[0];
+          delete tsCache[first];
+          tsCache[segment.file] = data;
+        }
       } else {
         this.logger.warn(
           'loadFile',

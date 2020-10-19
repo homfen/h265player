@@ -1,6 +1,6 @@
 {
   "name": "@alife/h265player",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "h265player",
   "main": "dist/h265player.js",
   "directories": {

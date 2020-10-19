@@ -517,6 +517,10 @@ class Player extends BaseClass {
     let audioPlayerBuffered = this.audioPlayer.buffer();
     let sTime = Math.max(videoBuffered.start, audioPlayerBuffered.start);
     let eTime = Math.min(videoBuffered.end, audioPlayerBuffered.end);
+    if (!this.audioPlayer.need) {
+      sTime = videoBuffered.start;
+      eTime = videoBuffered.end;
+    }
 
     if (sTime < eTime) {
       return [sTime, eTime];

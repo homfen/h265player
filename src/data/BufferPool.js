@@ -6,62 +6,54 @@
  * @author Jarry
  */
 
-
-import BasePool from "../base/BasePool"
-import BufferModel from "../model/BufferModel"
+import BasePool from '../base/BasePool';
+import BufferModel from '../model/BufferModel';
 class BufferPool extends BasePool {
   // bufferDuration = 0
   // bufferSize = 0
   constructor(data) {
-    super(data)
+    super(data);
   }
   add(data) {
     if (!(data instanceof BufferModel)) {
-      data = new BufferModel(data)
+      data = new BufferModel(data);
     }
     // keep the ASC order
-    let len = this.length
+    let len = this.length;
     if (len === 0) {
-      this.push(data)
-      return
+      this.push(data);
+      return;
     }
-    while(len--) {
+    while (len--) {
       if (data.no <= this[len].no) {
-        this.splice(len, 1, data)
-        return
+        this.splice(len, 1, data);
+        return;
       }
     }
-    this.push(data)
-    return this
+    this.push(data);
+    return this;
   }
-	getBufferSize() {
-    if (this.length <= 0) return 0
-		return this.reduce((acc, item) => {
-      if (isNaN(acc)) {
-        acc = acc.blob.size
-      }
-      return acc + item.blob.size
-    })
+  getBufferSize() {
+    if (this.length <= 0) return 0;
+    return this.reduce((acc, item) => {
+      return acc + item.blob.size;
+    }, 0);
   }
 
   get bufferSize() {
-    return this.getBufferSize()
+    return this.getBufferSize();
   }
 
   getBufferDuration() {
-    if (this.length <= 0) return 0
-		return this.reduce((acc, item) => {
-      if (isNaN(acc)) {
-        acc = acc.end - acc.start
-      }
-      return acc + (item.end - item.start)
-    })
+    if (this.length <= 0) return 0;
+    return this.reduce((acc, item) => {
+      return acc + (item.end - item.start);
+    }, 0);
   }
 
   get bufferDuration() {
-    return this.getBufferDuration()
+    return this.getBufferDuration();
   }
-  
 }
 
-export default BufferPool
+export default BufferPool;

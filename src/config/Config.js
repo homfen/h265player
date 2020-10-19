@@ -6,9 +6,9 @@
  * @author Jarry
  */
 
-// from webpack global variable 
+// from webpack global variable
 // __ENV_MODEL__: "production" | "development" | "test"
-const mode = typeof __ENV_MODE__ !== 'undefined' ? __ENV_MODE__ : 'none'
+const mode = typeof __ENV_MODE__ !== 'undefined' ? __ENV_MODE__ : 'none';
 
 const Config = {
   projectName: 'GOLDPLAY',
@@ -16,55 +16,56 @@ const Config = {
   mode: mode,
   basePath: './',
   get distPath() {
-    let path = ''
+    let path = '';
     if (this.mode == 'development') {
-      path = '/dist/'
+      path = '/dist/';
     } else if (this.mode == 'test') {
-      path = '/dist/'
+      path = '/dist/';
     }
-    return path
+    return path;
   },
   get libPath() {
-    return this.distPath + 'lib/'
+    return this.distPath + 'lib/';
   },
   hideBarBoxTime: 300,
   speedList: [
     {
       name: '0.5X',
-      value: 0.5
+      value: 0.5,
     },
     {
       name: '1.0X',
-      value: 1.0
+      value: 1.0,
     },
     {
       name: '1.5X',
-      value: 1.5
+      value: 1.5,
     },
     {
       name: '2.0X',
-      value: 2.0
+      value: 2.0,
     },
     {
       name: '3.0X',
-      value: 3.0
-    }
-  ]
-}
+      value: 3.0,
+    },
+  ],
+};
 
 const BUFFER = {
   //单位秒
   maxDuration: 30,
   maxSize: 1024 * 1000 * 1000,
-  maxRetryCount: 3
-}
+  maxRetryCount: 3,
+  maxSegment: 10,
+};
 
 const ERROR_STATE = {
   success: 100,
   fail: 200,
   pending: 300,
-  reject: 400
-}
+  reject: 400,
+};
 
 const ERROR_TYPE = {
   /** Errors from the net util. */
@@ -83,15 +84,15 @@ const ERROR_TYPE = {
   MUX: 5,
 
   /** Errors processing drm system. */
-  DRM: 6
-}
-const AV_TIME_BASE_Q = 1 / 90000
+  DRM: 6,
+};
+const AV_TIME_BASE_Q = 1 / 90000;
 const READY = {
   READYBUFFERLENGTH: 1000,
   //the buffer max length, unit is millisecond
-  MAXBUFFERLENGTH: 5000
-}
-const LIBFILES = ['ADTS.js', 'mux.js']
+  MAXBUFFERLENGTH: 5000,
+};
+const LIBFILES = ['ADTS.js', 'mux.js'];
 export {
   Config,
   ERROR_STATE,
@@ -99,5 +100,5 @@ export {
   BUFFER,
   AV_TIME_BASE_Q,
   READY,
-  LIBFILES
-}
+  LIBFILES,
+};

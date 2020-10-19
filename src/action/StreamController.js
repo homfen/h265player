@@ -36,7 +36,7 @@ export default class StreamController extends BaseClass {
       const videoData = aacCache[key];
       // console.log('onRead', data, aacCache, videoCache);
       if (false && aacCache[key] && videoCache[key]) {
-        console.log('decodeFromCache');
+        // console.log('decodeFromCache');
         this.readFromCache(aacData, videoData);
       } else {
         this.onRead(data);
