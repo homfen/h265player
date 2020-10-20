@@ -174,7 +174,10 @@ class HLSLoader extends BaseLoader {
     // max duration limit
     const bufferDuration = this.dataController.getLoadDataBufferPool()
       .bufferDuration;
-    if (bufferDuration >= this.maxBufferDuration) {
+    if (
+      this.options.player.playbackRate <= 1 &&
+      bufferDuration >= this.maxBufferDuration
+    ) {
       this.logger.info(
         'checkLoadCondition',
         'stop load next segment.',
@@ -225,12 +228,14 @@ class HLSLoader extends BaseLoader {
       return;
     }
 
+    /*
     if (tsCache[segment.file]) {
       const data = tsCache[segment.file];
       this.state = state.IDLE;
       this.events.emit(Events.LoaderLoaded, data, segment, type, time);
       return;
     }
+    */
 
     this.currentNo = segment.no;
 
@@ -311,6 +316,8 @@ class HLSLoader extends BaseLoader {
         this.logger.info('loadFile', 'read success', 'data no:', data.name);
         this.state = state.IDLE;
         this.events.emit(Events.LoaderLoaded, data, segment, type, time);
+        // tsCache[segment.file] = data;
+        /*
         if (tsCache.length < BUFFER.maxSegment) {
           tsCache[segment.file] = data;
         } else {
@@ -318,6 +325,7 @@ class HLSLoader extends BaseLoader {
           delete tsCache[first];
           tsCache[segment.file] = data;
         }
+        */
       } else {
         this.logger.warn(
           'loadFile',

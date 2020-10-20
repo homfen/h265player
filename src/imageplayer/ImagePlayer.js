@@ -60,7 +60,9 @@ export default class ImagePlayer extends BaseClass {
     this.imageData.push(data);
     let end = this.end;
     let duration = end - this.player.currentTime;
-    if (duration > READY.READYBUFFERLENGTH && !this.ready) {
+    const minDuration = READY.READYBUFFERLENGTH * this.player.playbackRate * 8;
+    //console.log('duration', duration, minDuration);
+    if (duration > minDuration && !this.ready) {
       this.ready = true;
       this.status = 'ready';
       this.events.emit(Events.ImagePlayerReady);

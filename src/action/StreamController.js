@@ -224,7 +224,7 @@ export default class StreamController extends BaseClass {
     let buffer = player.buffer();
     let maxTime = buffer[1] || 0;
     let bufferLength = maxTime - time;
-    if (bufferLength >= player.maxBufferLength) {
+    if (player.playbackRate <= 1 && bufferLength >= player.maxBufferLength) {
       return false;
     } else {
       return true;
@@ -236,7 +236,11 @@ export default class StreamController extends BaseClass {
       return;
     }
 
-    if (data && data.arrayBuffer && data.no === this.currentIndex) {
+    if (
+      data &&
+      data.arrayBuffer &&
+      (data.no === this.currentIndex || this.player.playbackRate > 1)
+    ) {
       this.retryTime = 0;
 
       this.logger.warn('onRead', 'get stream data');
