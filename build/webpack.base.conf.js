@@ -24,6 +24,7 @@ module.exports = {
     h265player: [
       path.resolve(basePath, './src/entry'), // string | object | array
     ],
+    events: [path.resolve(basePath, './src/config/EventsConfig')],
     'h265player-polyfill': [
       '@babel/polyfill',
       path.resolve(basePath, './src/index'), // string | object | array

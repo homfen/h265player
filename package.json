@@ -1,6 +1,6 @@
 {
   "name": "@alife/h265player",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "h265player",
   "main": "dist/h265player.js",
   "directories": {
@@ -74,7 +74,8 @@
   },
   "files": [
     "dist/h265player.js",
-    "dist/h265player.css",
+    "dist/h265player-polyfill.js",
+    "dist/events.js",
     "dist/lib/libffmpeg.js",
     "dist/lib/libffmpeg.wasm"
   ],
