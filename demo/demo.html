@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <link rel="stylesheet" href="../dist/h265player.css" />
     <script src="../dist/h265player.js"></script>
     <style>
       .play-container {
@@ -55,6 +54,7 @@
           codec: 1,
           libPath: Config.libPath,
           playBackRate: 1,
+          autoPlay: true,
         });
         // player.destroy()
       })(window, document);
