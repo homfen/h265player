@@ -1,5 +1,5 @@
 {
-  "name": "@alife/h265player",
+  "name": "h265player",
   "version": "0.0.13",
   "description": "h265player",
   "main": "dist/h265player.js",
@@ -17,7 +17,7 @@
     "jest": "jest"
   },
   "publishConfig": {
-    "registry": "https://registry.npm.alibaba-inc.com"
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "type": "git",
@@ -80,6 +80,6 @@
     "dist/lib/libffmpeg.wasm"
   ],
   "keywords": ["h265", "video", "player", "webassmebly"],
-  "author": "goldvideo",
+  "author": ["goldvideo", "homfen"],
   "license": "ISC"
 }
