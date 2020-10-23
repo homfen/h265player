@@ -60,7 +60,10 @@ export default class ImagePlayer extends BaseClass {
     this.imageData.push(data);
     let end = this.end;
     let duration = end - this.player.currentTime;
-    const minDuration = READY.READYBUFFERLENGTH * this.player.playbackRate * 8;
+    let minDuration = READY.READYBUFFERLENGTH;
+    if (this.player.playbackRate > 1) {
+      minDuration *= this.player.playbackRate * 8;
+    }
     //console.log('duration', duration, minDuration);
     if (duration > minDuration && !this.ready) {
       this.ready = true;
@@ -70,6 +73,7 @@ export default class ImagePlayer extends BaseClass {
         this.player.startPts = this.imageData.start;
       }
       const showTime = this.player.currentTime + this.player.startPts;
+      // console.log('render', showTime);
       this.render(showTime, false);
     }
     this.events.emit(Events.ImagePlayerBuffeUpdate);

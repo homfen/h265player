@@ -504,8 +504,8 @@ class Player extends BaseClass {
       this.changing = false;
       this.play();
     }
-    // console.log('onDataReady', this.status, this.imagePlayer.status, this.audioPlayer.status);
-    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && !this.paused) || (this.status === 'wait' && this.imagePlayer.status !== 'wait' && this.audioPlayer.status !== 'wait')) {
+    // console.log('onDataReady', this.statusBeforeWait, this.status, this.imagePlayer.status, this.audioPlayer.status);
+    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && !this.paused) || (this.statusBeforeWait=== 'playing' && this.status === 'wait' && this.imagePlayer.status !== 'wait' && this.audioPlayer.status !== 'wait')) {
       this.play();
     }
     else {

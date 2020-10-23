@@ -4,6 +4,8 @@
  * @author: liuliguo
  * @file: FFmpegDecode.js
  */
+import {NdArray} from 'numjs';
+
 export default class FFmpegDecode {
   constructor(decode) {
     this.decode = decode;
@@ -22,23 +24,29 @@ export default class FFmpegDecode {
       width,
       height,
       pts,
+      addr_bgr,
+      bgr_size,
     ) {
       let out_y = HEAPU8.subarray(addr_y, addr_y + stride_y * height);
       let out_u = HEAPU8.subarray(addr_u, addr_u + (stride_u * height) / 2);
       let out_v = HEAPU8.subarray(addr_v, addr_v + (stride_v * height) / 2);
+      let out_bgr = HEAPU8.subarray(addr_bgr, addr_bgr + bgr_size);
       let obj = {
         stride_y,
         stride_u,
         stride_v,
         width,
         height,
-        buf_y: new Uint8Array(out_y),
-        buf_u: new Uint8Array(out_u),
-        buf_v: new Uint8Array(out_v),
+        buf_y: Uint8Array.from(out_y),
+        buf_u: Uint8Array.from(out_u),
+        buf_v: Uint8Array.from(out_v),
         pts,
+        buf_bgr: Uint8Array.from(out_bgr),
+        bgr_size,
       };
       that.result.push(obj);
-    });
+    },
+    'viiiiiiiiiii');
     Module._openDecoder(codec, videoCallback, 1);
   }
   decodeData(pes, pts) {

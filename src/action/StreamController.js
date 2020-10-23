@@ -79,6 +79,7 @@ export default class StreamController extends BaseClass {
     });
     this.events.on(Events.PlayerWait, () => {
       this.logger.warn('player status wait');
+      this.player.statusBeforeWait = this.player.status;
       this.player.status = 'wait';
       if (this.loadDataStatus === 'loadend') {
         this.loadDataStatus = 'loading';

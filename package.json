@@ -28,6 +28,7 @@
     "demuxer": "^2.1.2",
     "loadjs": "^4.2.0",
     "m3u8-parser": "^4.4.3",
+    "ndarray": "^1.0.19",
     "yuv-buffer": "^1.0.0",
     "yuv-canvas": "^1.2.6"
   },
@@ -79,7 +80,15 @@
     "dist/lib/libffmpeg.js",
     "dist/lib/libffmpeg.wasm"
   ],
-  "keywords": ["h265", "video", "player", "webassmebly"],
-  "author": ["goldvideo", "homfen"],
+  "keywords": [
+    "h265",
+    "video",
+    "player",
+    "webassmebly"
+  ],
+  "author": [
+    "goldvideo",
+    "homfen"
+  ],
   "license": "ISC"
 }

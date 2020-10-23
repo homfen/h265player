@@ -28,7 +28,7 @@ class Decode {
       },
     };
     // self.importScripts(libPath + 'TAppDecoderStatic.js')
-    self.importScripts(libPath + 'libffmpeg.js');
+    self.importScripts(libPath + 'libffmpeg2.js');
     self.Module.onRuntimeInitialized = function() {
       // console.log('wasm loaded');
       if (!Module._web_decoder_open) {
