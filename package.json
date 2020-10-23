@@ -1,6 +1,6 @@
 {
   "name": "h265player",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "h265player",
   "main": "dist/h265player.js",
   "directories": {
@@ -80,15 +80,7 @@
     "dist/lib/libffmpeg.js",
     "dist/lib/libffmpeg.wasm"
   ],
-  "keywords": [
-    "h265",
-    "video",
-    "player",
-    "webassmebly"
-  ],
-  "author": [
-    "goldvideo",
-    "homfen"
-  ],
+  "keywords": ["h265", "video", "player", "webassmebly"],
+  "author": ["goldvideo", "homfen"],
   "license": "ISC"
 }
