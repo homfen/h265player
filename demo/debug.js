@@ -8,8 +8,11 @@ el.style.width = wWidth + "px";
 el.style.height = wWidth / 2 + "px";
 const href = window.location.href;
 const libPath = href.slice(0, href.lastIndexOf("/") + 1) + "lib/";
-const src1 =
-  "http://livenging.alicdn.com/mediaplatform/0d261cab-c201-4c05-889e-26d707c2b15b.m3u8";
+const urlPrefix = location.href.slice(
+  0,
+  location.href.lastIndexOf(location.pathname)
+);
+const src1 = urlPrefix + "/data/video2/video.m3u8";
 // const src1 =
 // "https://play.mms.cainiao.com/DingPei/live_STREAM_MAIN_24581642850820.m3u8?aliyun_uuid=442991077098708992-0";
 

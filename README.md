@@ -9,8 +9,8 @@ import h265player from "h265player";
 import Events from "h265player/dist/events";
 
 const el = document.querySelector(".play-container");
-const src = "http://livecaing.alicdn.com/mediaplatform/55717d8f-308a-4449-bad3-94685d0712e5_merge.m3u8";
-const libPath = "http://dev.g.alicdn.com/sail-fe/h265player/0.0.1/lib/";
+const src = "https://homfen.github.io/h265player/data/video2/video.m3u8";
+const libPath = "https://homfen.github.io/h265player/lib/";
 const player = new h265player(el, {
   sourceURL: src,
   type: "HLS",
