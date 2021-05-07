@@ -1,4 +1,9 @@
-<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="utf-8"/><style>body {
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
         padding: 0 20px;
       }
       .play-container {
@@ -13,14 +18,44 @@
       .inline {
         display: inline-block;
         width: 50px;
-      }</style></head><body><div id="PlayerWrapper"><h3>H.265 Player <b>在线播放器Demo1</b><em class="demo1" id="Demo1">DEMO</em></h3><div class="play-container"></div></div><br clear="all"/><div><input id="seekValue"/><button id="seekBtn">seek</button></div><div><input id="srcValue" value="http://livenging.alicdn.com/mediaplatform/3051caad-ccce-4ae2-b126-0993ebe53cd3_merge.m3u8"/><button id="srcBtn">change src</button></div><div>currentFrame:<span id="currentFrame">0</span> <button id="prevFrame">Prev Frame</button><button id="nextFrame">Next Frame</button></div><div><button id="fullScreen">Full screen</button><button id="exitFullScreen">Exit full screen</button></div><div><input id="isLive" type="checkbox"/><label>isLive</label></div><script src="./index.js"></script><pre>
+      }
+    </style>
+  </head>
+  <body>
+    <div id="PlayerWrapper">
+      <h3>
+        H.265 Player <b>在线播放器Demo1</b
+        ><em class="demo1" id="Demo1">DEMO</em>
+      </h3>
+      <div class="play-container"></div>
+    </div>
+    <br clear="all" />
+    <div><input id="seekValue" /><button id="seekBtn">seek</button></div>
+    <div>
+      <input
+        id="srcValue"
+        value="https://homfen.github.io/h265player/data/video2/video.m3u8"
+      /><button id="srcBtn">change src</button>
+    </div>
+    <div>
+      currentFrame:<span id="currentFrame">0</span>
+      <button id="prevFrame">Prev Frame</button
+      ><button id="nextFrame">Next Frame</button>
+    </div>
+    <div>
+      <button id="fullScreen">Full screen</button
+      ><button id="exitFullScreen">Exit full screen</button>
+    </div>
+    <div><input id="isLive" type="checkbox" /><label>isLive</label></div>
+    <script src="./index.js"></script>
+    <pre>
       <code>
 import h265player from "h265player";
 import Events from "h265player/dist/events";
 
 const el = document.querySelector(".play-container");
-const src = "http://livecaing.alicdn.com/mediaplatform/55717d8f-308a-4449-bad3-94685d0712e5_merge.m3u8";
-const libPath = "http://dev.g.alicdn.com/sail-fe/h265player/0.0.1/lib/";
+const src = "https://homfen.github.io/h265player/data/video2/video.m3u8";
+const libPath = "https://homfen.github.io/h265player/lib/";
 const player = new h265player(el, {
   sourceURL: src,
   type: "HLS",
@@ -42,4 +77,6 @@ const timeupdate = () => {
 };
 player.events.on(Events.ImagePlayerRenderEnd, timeupdate);
       </code>
-    </pre></body></html>
+    </pre>
+  </body>
+</html>
