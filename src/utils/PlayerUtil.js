@@ -43,6 +43,8 @@ export default class PlayerUtil {
     } else {
       screenHeight = $container.offsetHeight - player.controlBarHeight;
     }
+    player.screenWidth = $container.offsetWidth;
+    player.screenHeight = screenHeight;
     $ele.style.height = screenHeight + 'px';
     return $ele;
   }
@@ -52,6 +54,7 @@ export default class PlayerUtil {
     $ele.classList.add(cssName.screenCanvas);
     $ele.width = player.options.screenWidth || player.screenWidth;
     $ele.height = player.options.screenHeight || player.screenHeight;
+    // console.log('createCanvas', $ele.width, $ele.height);
     return $ele;
   };
 

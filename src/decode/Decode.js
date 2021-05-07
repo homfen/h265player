@@ -4,9 +4,9 @@
  * @author: liuliguo
  * @file: Decode.js
  */
-import {AV_TIME_BASE_Q} from '../config/Config.js';
-import FFmpegDecode from './FFmpegDecode';
-import PCWDecode from './PCWDecode';
+import { AV_TIME_BASE_Q } from "../config/Config.js";
+import FFmpegDecode from "./FFmpegDecode";
+import PCWDecode from "./PCWDecode";
 class Decode {
   constructor() {
     this.p = null;
@@ -23,13 +23,13 @@ class Decode {
     let libPath = event.data.libPath;
     this.codec = event.data.codec;
     self.Module = {
-      locateFile: function(wasm) {
+      locateFile: function (wasm) {
         return libPath + wasm;
-      },
+      }
     };
     // self.importScripts(libPath + 'TAppDecoderStatic.js')
-    self.importScripts(libPath + 'libffmpeg2.js');
-    self.Module.onRuntimeInitialized = function() {
+    self.importScripts(libPath + "libffmpeg.js");
+    self.Module.onRuntimeInitialized = function () {
       // console.log('wasm loaded');
       if (!Module._web_decoder_open) {
         self.decode.decodeTool = new FFmpegDecode(self.decode, this.event);
@@ -58,14 +58,16 @@ class Decode {
   }
   //receive data and start decode
   push(dataArray) {
-    dataArray.forEach(data => {
+    dataArray.forEach((data) => {
       let pts = data.PTS;
       let pes = data.data_byte;
       let partEnd = data.partEnd;
       let lastTS = data.lastTS;
       let ptsList = this.ptsList;
       this.insertSort(ptsList, parseInt(pts * AV_TIME_BASE_Q * 1000));
+      // let start = performance.now();
       this.decodeTool.decodeData(pes, pts, this.p);
+      // console.log('decodeData', pts, performance.now() - start);
       if (this.decodeTool.checkData(this.p)) {
         this.getDecodeYUV(this.p, partEnd, lastTS);
       }
@@ -95,27 +97,54 @@ class Decode {
       this.previousPTS = pts;
       this.yuvArray.push(yuv);
       let length = this.yuvArray.length;
-      if (length > 10) {
-        self.postMessage({
-          type: 'decoded',
-          data: this.yuvArray,
-          no: this.no,
-        });
+      if (length > 5) {
+        let start = Date.now();
+        // console.log('getDecodeYUV', pts, start);
+        let transfer = this.yuvArray.reduce(
+          (a, yuv) =>
+            a.concat([yuv.buf_y.buffer, yuv.buf_u.buffer, yuv.buf_v.buffer]),
+          []
+        );
+        self.postMessage(
+          {
+            type: "decoded",
+            data: this.yuvArray,
+            no: this.no,
+            poolIndex: this.poolIndex,
+            pts,
+            start
+          },
+          transfer
+        );
         this.yuvArray = [];
       }
     }
     if (partEnd) {
       if (this.yuvArray.length) {
-        self.postMessage({
-          type: 'decoded',
-          data: this.yuvArray,
-          no: this.no,
-        });
+        let start = Date.now();
+        // console.log('getDecodeYUV', pts, start);
+        let transfer = this.yuvArray.reduce(
+          (a, yuv) =>
+            a.concat([yuv.buf_y.buffer, yuv.buf_u.buffer, yuv.buf_v.buffer]),
+          []
+        );
+        self.postMessage(
+          {
+            type: "decoded",
+            data: this.yuvArray,
+            no: this.no,
+            poolIndex: this.poolIndex,
+            pts,
+            start
+          },
+          transfer
+        );
         this.yuvArray = [];
       }
       self.postMessage({
-        type: 'partEnd',
+        type: "partEnd",
         data: lastTS,
+        no: this.no
       });
     }
   }
@@ -129,8 +158,8 @@ class Decode {
     this.closeDecode();
     this.openDecode();
     self.postMessage({
-      type: 'resetEnd',
-      data: Date.now(),
+      type: "resetEnd",
+      data: Date.now()
     });
     this.reseting = false;
   }
@@ -138,15 +167,17 @@ class Decode {
     this.decodeTool.flush(this.p);
     if (this.yuvArray.length) {
       self.postMessage({
-        type: 'decoded',
+        type: "decoded",
         data: this.yuvArray,
+        no: this.no,
+        poolIndex: this.poolIndex
       });
       this.yuvArray = [];
     }
     this.closeDecode();
     self.postMessage({
-      type: 'flushEnd',
-      data: this.previousPTS,
+      type: "flushEnd",
+      data: this.previousPTS
     });
   }
 
@@ -160,7 +191,7 @@ class Decode {
   }
   onWasmLoaded() {
     self.postMessage({
-      type: 'dataProcessorReady',
+      type: "dataProcessorReady"
     });
   }
   insertSort(array, value) {
@@ -181,6 +212,11 @@ class Decode {
       }
     }
     array.push(value);
+  }
+  onCodecError() {
+    self.postMessage({
+      type: "codecError"
+    });
   }
 }
 export default Decode;

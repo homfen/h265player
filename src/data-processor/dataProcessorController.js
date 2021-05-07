@@ -4,9 +4,11 @@
  * @author: liuliguo
  * @file: dataProcessorController.js
  */
-import BaseClass from '../base/BaseClass.js';
-import webworkify from 'webworkify-webpack';
-import Events from '../config/EventsConfig';
+import BaseClass from "../base/BaseClass.js";
+import webworkify from "webworkify-webpack";
+import Events from "../config/EventsConfig";
+
+let emitTimer = null;
 
 export default class DataProcessorController extends BaseClass {
   isLast = false;
@@ -15,11 +17,13 @@ export default class DataProcessorController extends BaseClass {
     this.type = options.type;
     this.libPath = options.libPath;
     this.player = options.player;
+    this.keepCache = this.player.options.keepCache;
     this.init();
+    this.codecError = false;
   }
   init() {
     let type = this.type;
-    if (type == 'ts') {
+    if (type == "ts") {
       this.initNornalWorker();
     }
     this.bindEvent();
@@ -29,33 +33,45 @@ export default class DataProcessorController extends BaseClass {
     this.processor = this.initWorker();
   }
   initWorker() {
-    let processor = webworkify(require.resolve('./dataProcessor.js'));
-    processor.onmessage = event => {
+    let processor = webworkify(require.resolve("./dataProcessor.js"));
+    processor.onmessage = (event) => {
+      if (this.codecError) return;
+
       let workerData = event.data;
       let type = workerData.type;
       let no = workerData.no;
+      let poolIndex = workerData.poolIndex;
       let data = workerData.data;
+      // let start = workerData.start;
+      // let pts = workerData.pts;
       switch (type) {
-        case 'dataProcessorReady':
+        case "dataProcessorReady":
           this.onDataProcessorReady();
           break;
-        case 'decoded':
-          this.onDecoded(data, no);
+        case "decoded":
+          // let end = Date.now();
+          // console.log('onDecoded', pts, end - start, start, end);
+          this.onDecoded(data, no, poolIndex);
           break;
-        case 'demuxedAAC':
+        case "demuxedAAC":
           this.onDemuxedAAC(data, no);
           break;
-        case 'partEnd':
-          this.onPartEnd(data);
+        case "partEnd":
+          this.onPartEnd(data, no);
           break;
-        case 'resetEnd':
+        case "resetEnd":
           this.onResetEnd();
           break;
-        case 'maxPTS':
+        case "maxPTS":
           this.onMaxPTS(data);
           break;
-        case 'flushEnd':
+        case "flushEnd":
           this.onFlushEnd(data);
+          break;
+        case "codecError":
+          this.onCodecError();
+          break;
+        default:
           break;
       }
     };
@@ -72,14 +88,16 @@ export default class DataProcessorController extends BaseClass {
   }
   flush() {
     this.processor.postMessage({
-      type: 'flush',
+      type: "flush",
+      sourceType: this.player.options.type
     });
   }
   loadjs() {
     this.processor.postMessage({
-      type: 'loadwasm',
+      type: "loadwasm",
       libPath: this.libPath,
       codec: this.options.codec,
+      sourceType: this.player.options.type
     });
   }
   reset() {
@@ -87,6 +105,7 @@ export default class DataProcessorController extends BaseClass {
     this.processor.terminate();
     this.initNornalWorker();
     this.loadjs();
+    this.codecError = false;
   }
   onFlushEnd(data) {
     this.events.emit(Events.DecodeFlushEnd, data);
@@ -96,6 +115,12 @@ export default class DataProcessorController extends BaseClass {
   }
   onDemuxedAAC(pes, no) {
     this.events.emit(Events.DemuxAAC, pes, no);
+    const segment = this.player.loadData.segmentPool.find(
+      (item) => item.no === no
+    );
+    if (segment.decoded && this.keepCache) {
+      this.events.emit(Events.DecodeApppendEnd);
+    }
   }
   onDataProcessorReady() {
     if (this.player.seeking || this.player.reseting) {
@@ -108,29 +133,51 @@ export default class DataProcessorController extends BaseClass {
     if (this.player.reseting) {
       return;
     }
-    this.logger.info('onStartDemux', 'postMessage to demux');
+    this.logger.info("onStartDemux", "postMessage to demux", data.no);
 
+    const segment = this.player.loadData.segmentPool.find(
+      (item) => item.no === data.no
+    );
+    if (segment.decoded && this.keepCache) {
+      this.events.emit(Events.ImagePlayerReady);
+      this.events.emit(Events.PlayerSeekEnd);
+      const imagePlayer = this.player.imagePlayer;
+      imagePlayer.ready = true;
+      imagePlayer.status = "ready";
+      imagePlayer.render(this.player.currentTime, false);
+    }
     if (data && data.arrayBuffer && data.arrayBuffer.byteLength > 0) {
-      this.processor.postMessage(
-        {
-          type: 'startDemux',
-          data: data.arrayBuffer,
-          no: data.no,
-          isLast: this.isLast,
-        },
-        [data.arrayBuffer.buffer],
-      );
+      this.demuxNo = data.no;
+      // console.log("startDemux", data.no);
+      this.processor.postMessage({
+        type: "startDemux",
+        data: data.arrayBuffer.slice(),
+        no: data.no,
+        decoded: segment.decoded,
+        poolIndex: this.player.imagePlayer.imageData.poolIndex,
+        sourceType: this.player.options.type,
+        isLast: this.isLast
+      });
+      this.player.loadData.loadSegmentByNo(data.no + 1);
     } else {
-      this.logger.error('onStartDemux', 'data is null', 'data:', data);
+      this.logger.error("onStartDemux", "data is null", "data:", data);
     }
   }
-  onDecoded(data, no) {
+  onDecoded(data, no, poolIndex) {
+    // if (this.player.reseting && !this.keepCache) {
     if (this.player.reseting) {
       return;
     }
-    this.events.emit(Events.DecodeDecoded, data, no);
+    this.events.emit(Events.DecodeDecoded, data, no, poolIndex);
   }
-  onPartEnd(data) {
+  onPartEnd(data, no) {
+    const segment = this.player.loadData.segmentPool.find(
+      (item) => item.no === no
+    );
+    if (segment && this.keepCache) {
+      // console.log("decoded", segment.no);
+      segment.decoded = true;
+    }
     this.events.emit(Events.DecodeApppendEnd, data);
   }
   onResetEnd() {
@@ -140,5 +187,12 @@ export default class DataProcessorController extends BaseClass {
     if (this.processor) {
       this.processor.terminate();
     }
+  }
+  onCodecError() {
+    this.codecError = true;
+    clearTimeout(emitTimer);
+    emitTimer = setTimeout(() => {
+      this.events.emit(Events.DemuxCodecError);
+    }, 100);
   }
 }

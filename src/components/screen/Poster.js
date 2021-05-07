@@ -5,24 +5,23 @@
  * @file: Poster.js
  */
 
-import BaseComponent from '../../base/BaseComponent';
-import Events from '../../config/EventsConfig';
-import {sizeFormat} from '../../utils/Format';
+import BaseComponent from "../../base/BaseComponent";
+import Events from "../../config/EventsConfig";
+import { sizeFormat } from "../../utils/Format";
 
 class Poster extends BaseComponent {
   template = this.createTemplate`
   <gp-poster class="goldplay__screen--poster">
-  <img src="${'poster'}" width="${'width'}" data-display="${'display'}" heigth="${'height'}" class="goldplay__screen--poster-image">
-  <gp-speed class="goldplay__screen--poster-speed">${'speed'}</gp-speed>
+  <img src="${"poster"}" width="${"width"}" data-display="${"display"}" heigth="${"height"}" class="goldplay__screen--poster-image">
   </gp-poster>
   `;
   data = {
-    poster: '',
-    status: '',
-    display: 'show',
-    speed: '',
-    width: '',
-    height: '',
+    poster: "",
+    status: "",
+    display: "show",
+    speed: "",
+    width: "",
+    height: ""
   };
   options = {};
   constructor(options = {}) {
@@ -41,21 +40,21 @@ class Poster extends BaseComponent {
     }
     const width = this.element.parentNode.offsetWidth;
     const height = this.element.parentNode.offsetHeight;
-    this.element.style.width = width + 'px';
+    this.element.style.width = width + "px";
     this.element.style.marginTop =
-      (height - this.element.offsetHeight - 20) / 2 + 'px';
+      (height - this.element.offsetHeight - 20) / 2 + "px";
   }
 
   bindEvent() {
-    this.events.on(Events.LoaderUpdateSpeed, data => {
-      if (this.data.display === 'show') {
-        this.data.speed = sizeFormat.formatBytes(data.speed) + ' /s';
+    this.events.on(Events.LoaderUpdateSpeed, (data) => {
+      if (this.data.display === "show") {
+        this.data.speed = sizeFormat.formatBytes(data.speed) + " /s";
       }
     });
   }
 
   hide() {
-    if (this.data.display !== 'hide') {
+    if (this.data.display !== "hide") {
       // let value = 1
       // let timer = setInterval(() => {
       //   if (value <= 0) {
@@ -67,8 +66,8 @@ class Poster extends BaseComponent {
       //   this.element.style.opacity = value
       // }, 50)
       this.element.style.opacity = 0;
-      this.element.style.display = 'none';
-      this.data.display = 'hide';
+      this.element.style.display = "none";
+      this.data.display = "hide";
     }
   }
 }

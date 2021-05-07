@@ -5,18 +5,20 @@
  * @file: StreamController.js
  */
 
-import BaseClass from '../base/BaseClass';
-import Events from '../config/EventsConfig';
+import BaseClass from "../base/BaseClass";
+import Events from "../config/EventsConfig";
 
 let aacCache = {};
 let videoCache = {};
+let pushTimer = null;
+let videoBuffer = [];
 
 export default class StreamController extends BaseClass {
   currentIndex = null;
   retryTime = 0;
-  dataReady = {audioReady: false, imageReady: false};
+  dataReady = { audioReady: false, imageReady: false };
   hasInit = false;
-  loadDataStatus = 'loading';
+  loadDataStatus = "loading";
   duration = 0;
   tsNumber = 0;
   constructor(options) {
@@ -25,10 +27,11 @@ export default class StreamController extends BaseClass {
     this.imagePlayer = options.imagePlayer;
     this.audioPlayer = options.audioPlayer;
     this.player = options.player;
+    this.keepCache = this.player.options.keepCache;
     this.bindEvent();
   }
   bindEvent() {
-    this.events.on(Events.LoadDataRead, data => {
+    this.events.on(Events.LoadDataRead, (data) => {
       if (!data) return;
       const no = data.no;
       const key = `${this.player.options.sourceURL}-${no}`;
@@ -49,51 +52,57 @@ export default class StreamController extends BaseClass {
       // console.log('demuxAAC', data, no);
       this.onAACDemuxed(data, no);
     });
-    this.events.on(Events.DecodeDecoded, (data, no) => {
+    this.events.on(Events.DecodeDecoded, (data, no, poolIndex) => {
       // console.log('demuxVideo', no);
-      this.onDecoded(data, no);
+      this.onDecoded(data, no, poolIndex);
     });
-    this.events.on(Events.DecodeApppendEnd, data => {
+    this.events.on(Events.DecodeApppendEnd, (data) => {
       this.onAppendEnd(data);
     });
     this.events.on(Events.ImagePlayerReady, () => {
-      this.logger.info('bindevent', 'Events.ImagePlayerReady');
-      this.checkDataReady('imageReady');
+      this.logger.info("bindevent", "Events.ImagePlayerReady");
+      this.checkDataReady("imageReady");
     });
     this.events.on(Events.AudioPlayerDataReady, () => {
-      this.logger.info('bindevent', 'Events.AudioPlayerDataReady');
+      this.logger.info("bindevent", "Events.AudioPlayerDataReady");
       this.player.receiveAACTime = null;
-      this.checkDataReady('audioReady');
+      this.checkDataReady("audioReady");
     });
     this.events.on(Events.AudioPlayerWait, () => {
       this.dataReady.audioReady = false;
-      this.events.emit(Events.PlayerWait, 'audioPlayer');
+      this.events.emit(Events.PlayerWait, "audioPlayer");
     });
     this.events.on(Events.ImagePlayerWait, () => {
       this.dataReady.imageReady = false;
-      this.events.emit(Events.PlayerWait, 'imagePlayer');
+      this.events.emit(Events.PlayerWait, "imagePlayer");
     });
     this.events.on(Events.ImagePlayerEnd, () => {
-      this.logger.info('bindevent', '........imageplayer end');
-      this.events.emit(Events.PlayerEnd);
+      if (this.player.currentTime >= this.player.duration * 1000) {
+        this.logger.info("bindevent", "........imageplayer end");
+        this.events.emit(Events.PlayerEnd);
+      }
     });
     this.events.on(Events.PlayerWait, () => {
-      this.logger.warn('player status wait');
+      this.logger.warn("player status wait");
       this.player.statusBeforeWait = this.player.status;
-      this.player.status = 'wait';
-      if (this.loadDataStatus === 'loadend') {
-        this.loadDataStatus = 'loading';
+      this.player.status = "wait";
+      if (this.loadDataStatus === "loadend") {
+        this.loadDataStatus = "loading";
         this.loadNext();
       }
     });
     this.events.on(Events.PlayerLoadNext, () => {
-      if (this.loadDataStatus === 'loadend') {
-        this.loadDataStatus = 'loading';
+      if (this.loadDataStatus === "loadend") {
+        this.loadDataStatus = "loading";
         this.loadNext();
       }
     });
-    this.events.on(Events.DecodeFlushEnd, data => {
-      this.logger.info('flushend>>>>>>>>>>>>>>>', data);
+    this.events.on(Events.ImagePlayerSwitchPool, (no) => {
+      this.startLoad(no);
+      // this.currentIndex = no;
+    });
+    this.events.on(Events.DecodeFlushEnd, (data) => {
+      this.logger.info("flushend>>>>>>>>>>>>>>>", data);
       this.imagePlayer.maxPTS = data;
     });
   }
@@ -118,43 +127,67 @@ export default class StreamController extends BaseClass {
     this.tsNumber = info.tsNumber;
   }
   reset() {
-    this.dataReady = {audioReady: false, imageReady: false};
+    this.dataReady = { audioReady: false, imageReady: false };
     this.currentIndex = null;
-    this.loadDataStatus = 'loading';
+    this.loadDataStatus = "loading";
   }
   startLoad(index) {
-    this.logger.info('startLoad', 'index:', index);
+    this.logger.info("startLoad", "index:", index);
     this.currentIndex = index;
     this.player.currentIndex = index;
     this.events.emit(Events.LoadDataReadBufferByNo, index);
   }
   loadNext() {
     if (this.player.reseting) {
+      this.loadDataStatus = "loadend";
       return;
     }
     if (this.currentIndex >= this.tsNumber) {
       this.logger.info(
-        'loadNext',
-        'load end',
-        'currentIndex',
+        "loadNext",
+        "load end",
+        "currentIndex",
         this.currentIndex,
-        'tsNumber:',
-        this.tsNumber,
+        "tsNumber:",
+        this.tsNumber
       );
+      this.loadDataStatus = "loadend";
       return;
     }
     this.currentIndex += 1;
     this.player.currentIndex = this.currentIndex;
-    this.logger.info('loadNext', 'load next ts', 'tsno:', this.currentIndex);
+    this.logger.info("loadNext", "load next ts", "tsno:", this.currentIndex);
     this.events.emit(Events.LoadDataReadBufferByNo, this.currentIndex);
   }
-  onDecoded(dataArray, no) {
-    dataArray.forEach(data => {
-      if (this.player.reseting) {
-        return;
+  onDecoded(dataArray, no, poolIndex) {
+    // this.logger.info(
+    // "StreamController",
+    // "onDecoded",
+    // "tsno:",
+    // no,
+    // dataArray.length,
+    // poolIndex
+    // );
+    dataArray.forEach((data) => {
+      data.no = no;
+      const segment = this.loadData.segmentPool.find((item) => item.no === no);
+      if (segment.startVideoPts == null) {
+        segment.startVideoPts = data.pts - segment.start * 1000;
       }
+      data.pts = data.pts - segment.startVideoPts;
+      // console.log("onDecoded", no, data.pts);
       if (data.pts >= this.player.currentTime) {
-        this.imagePlayer.push(data);
+        this.imagePlayer.push(data, poolIndex);
+      } else if (this.keepCache) {
+        data.poolIndex = poolIndex;
+        videoBuffer.push(data);
+        clearTimeout(pushTimer);
+        pushTimer = setTimeout(() => {
+          while (videoBuffer.length) {
+            const data = videoBuffer.shift();
+            this.imagePlayer.push(data, data.poolIndex);
+          }
+        }, 100);
       }
     });
     /*
@@ -166,28 +199,33 @@ export default class StreamController extends BaseClass {
     */
   }
   onAppendEnd(data) {
+    this.loadDataStatus = "loadend";
     if (data) {
-      this.logger.info('onAppendEnd', 'events.decodeFlush', data);
+      this.logger.info("onAppendEnd", "events.decodeFlush", data);
       this.events.emit(Events.DecodeFlush);
       return;
     }
     this.logger.info(
-      'onAppendEnd',
-      'start load next ts condition',
+      "onAppendEnd",
+      "start load next ts condition",
       this.checkBuffer(),
-      this.currentIndex,
+      this.currentIndex
     );
     if (this.checkBuffer() && this.currentIndex !== null) {
       this.logger.info(
-        'onAppendEnd',
-        'load next ts. currentIndex:',
-        this.currentIndex,
+        "onAppendEnd",
+        "load next ts. currentIndex:",
+        this.currentIndex
       );
       this.loadNext();
       return;
     }
-    this.loadDataStatus = 'loadend';
-    this.logger.info('onAppendEnd', 'load ts stop');
+    this.logger.info("onAppendEnd", "load ts stop");
+    // if (this.player.status === "wait") {
+    // this.player.action.seek(
+    // this.player.currentTime + (this.player.startPts || 0)
+    // );
+    // }
   }
   onAACDemuxed(dataArray, no) {
     if (this.player.reseting) {
@@ -197,7 +235,19 @@ export default class StreamController extends BaseClass {
     if (!dataArray.length) {
       this.audioPlayer.send({});
     }
-    dataArray.forEach(data => {
+    this.logger.info(
+      "StreamController",
+      "onAACDemuxed",
+      "tsno:",
+      no,
+      dataArray.length
+    );
+    dataArray.forEach((data) => {
+      const segment = this.loadData.segmentPool.find((item) => item.no === no);
+      if (segment.startAudioPts == null) {
+        segment.startAudioPts = data.PTS - segment.start * 1000;
+      }
+      data.PTS = data.PTS - segment.startAudioPts;
       if (data.PTS >= this.player.currentTime || data.audioEnd) {
         if (!this.player.receiveAACTime && this.player.seeking) {
           this.player.receiveAACTime = Date.now();
@@ -225,44 +275,57 @@ export default class StreamController extends BaseClass {
     let buffer = player.buffer();
     let maxTime = buffer[1] || 0;
     let bufferLength = maxTime - time;
-    if (player.playbackRate <= 1 && bufferLength >= player.maxBufferLength) {
-      return false;
-    } else {
-      return true;
+    // console.log(
+    // "bufferLength",
+    // bufferLength,
+    // maxTime,
+    // time,
+    // player.maxBufferLength
+    // );
+    const maxBufferLength = player.playbackRate * player.maxBufferLength;
+    if (bufferLength > 0) {
+      if (bufferLength > maxBufferLength) {
+        return false;
+      } else {
+        return true;
+      }
     }
+    return false;
   }
   onRead(data) {
     if (this.player.reseting) {
-      console.error('onRead reseting');
+      // console.error("onRead reseting");
       return;
     }
 
     if (
       data &&
       data.arrayBuffer &&
-      (data.no === this.currentIndex || this.player.playbackRate > 1)
+      (data.no === this.currentIndex ||
+        this.player.playbackRate > 1 ||
+        this.player.options.type === "MP4")
     ) {
       this.retryTime = 0;
 
-      this.logger.warn('onRead', 'get stream data');
+      this.logger.warn("onRead", "get stream data", data.no);
       //start demux, get the video and audio
-      if (data.no === this.tsNumber) {
+      if (data.no === this.tsNumber && !this.player.options.isLive) {
         //the last one ts packet
-        this.logger.info('onRead', 'the last ts');
+        this.logger.info("onRead", "the last ts");
         this.events.emit(Events.DemuxLast);
       }
       this.events.emit(Events.DemuxStartDemux, data);
     } else {
       this.logger.error(
-        'onRead',
-        'load ts failred',
-        'tsno:',
-        this.currentIndex,
+        "onRead",
+        "load ts failred",
+        "tsno:",
+        this.currentIndex
       );
     }
   }
   readFromCache(aacData, videoData) {
-    aacData.forEach(data => {
+    aacData.forEach((data) => {
       if (data.PTS >= this.player.currentTime || data.audioEnd) {
         if (!this.player.receiveAACTime && this.player.seeking) {
           this.player.receiveAACTime = Date.now();
@@ -270,7 +333,7 @@ export default class StreamController extends BaseClass {
         this.audioPlayer.send(data);
       }
     });
-    videoData.forEach(data => {
+    videoData.forEach((data) => {
       if (this.player.reseting) {
         return;
       }

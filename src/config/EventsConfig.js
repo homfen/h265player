@@ -1,109 +1,111 @@
 /**
  * @copyright: Copyright (C) 2019
  * @desc: events object
- * @author: liuliguo 
+ * @author: liuliguo
  * @file: EventsConfig.js
  */
 
 const Events = {
-  ProcessorResetEnd: 'DataProcessorController.processorResetEnd',
-  DataProcessorReady: 'DataProcessorController.dataProcessorReady',
+  ProcessorResetEnd: "DataProcessorController.processorResetEnd",
+  DataProcessorReady: "DataProcessorController.dataProcessorReady",
   // DecodeResetEnd: 'DecodeController.resetEnd',
-  DecodeStartDecode: 'DecodeController.startDecode',
-  DecodeFlush: 'DecodeController.flush',
-  DecodeDecoded: 'DecodeController.decoded',
-  DecodeApppendEnd: 'DecodeController.appendEnd',
-  DecodeFlushEnd: 'DecodeController.flushEnd',
-  DecodeReady: 'DecodeController.ready',
+  DecodeStartDecode: "DecodeController.startDecode",
+  DecodeFlush: "DecodeController.flush",
+  DecodeDecoded: "DecodeController.decoded",
+  DecodeApppendEnd: "DecodeController.appendEnd",
+  DecodeFlushEnd: "DecodeController.flushEnd",
+  DecodeReady: "DecodeController.ready",
 
-  DemuxResetEnd: 'DemuxController.resetEnd',
-  DemuxStartDemux: 'DemuxController.startDemux',
-  DemuxLast: 'DemuxController.last',
-  DemuxVideo: 'DemuxController.video',
-  DemuxAAC: 'DemuxController.AAC',
-  DemuxReady: 'DemuxController.ready',
+  DemuxResetEnd: "DemuxController.resetEnd",
+  DemuxStartDemux: "DemuxController.startDemux",
+  DemuxLast: "DemuxController.last",
+  DemuxVideo: "DemuxController.video",
+  DemuxAAC: "DemuxController.AAC",
+  DemuxReady: "DemuxController.ready",
+  DemuxCodecError: "DemuxController.codecError",
 
-  ImagePlayerRenderEnd: 'ImagePlayer.renderEnd',
-  ImagePlayerWait: 'ImagePlayer.wait',
-  ImagePlayerReady: 'ImagePlayer.ready',
-  ImagePlayerEnd: 'ImagePlayer.end',
-  ImagePlayerBuffeUpdate: 'ImagePlayer.bufferUpdate',
+  ImagePlayerRenderEnd: "ImagePlayer.renderEnd",
+  ImagePlayerWait: "ImagePlayer.wait",
+  ImagePlayerReady: "ImagePlayer.ready",
+  ImagePlayerEnd: "ImagePlayer.end",
+  ImagePlayerBuffeUpdate: "ImagePlayer.bufferUpdate",
+  ImagePlayerSwitchPool: "ImagePlayer.switchPool",
 
-  ControlBarPlay: 'ControlBar.onPlay',
-  ControlBarPause: 'ControlBar.onPause',
-  ControlBarPauseLoading: 'ControlBar.onPauseLoading',
+  ControlBarPlay: "ControlBar.onPlay",
+  ControlBarPause: "ControlBar.onPause",
+  ControlBarPauseLoading: "ControlBar.onPauseLoading",
 
-  LoadDataReadBufferByNo: 'LoadData.readBufferByNo',
-  LoadDataReadBuffer: 'LoadData.readBuffer',
-  LoadDataRead: 'LoadData.onRead',
-  LoadDataSeek: 'LoadData.onSeek',
-  LoadDataFirstLoaded: 'LoadData.onFirstLoaded',
-  
-  LoaderPlayListStart: 'Loader.playlistStart',
-  LoaderLoading: 'Loader.onLoading',
-  LoaderError: 'Loader.onError',
-  LoaderLoaded: 'Loader.onLoaded',
-  LoaderUpdateSpeed: 'Loader.updateSpeed',
-  LoaderLoadFile: 'Loader.loadFile',
-  LoaderPlayListLoaded: 'Loader.playlistLoaded',
+  LoadDataReadBufferByNo: "LoadData.readBufferByNo",
+  LoadDataReadBuffer: "LoadData.readBuffer",
+  LoadDataRead: "LoadData.onRead",
+  LoadDataSeek: "LoadData.onSeek",
+  LoadDataFirstLoaded: "LoadData.onFirstLoaded",
 
-  AudioPlayerReady: 'AudioPlayer.MSEReady',
-  AudioPlayerDataReady: 'AudioPlayer.dataReady',
-  AudioPlayerWait: 'AudioPlayer.wait',
-  AudioPlayerEnd: 'AudioPlayer.end',
-  AudioPlayerPlaySuccess: 'AudioPlayer.playSuccess',
-  AudioPlayerPlayFail: 'AudioPlayer.playFail',
+  LoaderPlayListStart: "Loader.playlistStart",
+  LoaderLoading: "Loader.onLoading",
+  LoaderError: "Loader.onError",
+  LoaderLoaded: "Loader.onLoaded",
+  LoaderUpdateSpeed: "Loader.updateSpeed",
+  LoaderLoadFile: "Loader.loadFile",
+  LoaderPlayListLoaded: "Loader.playlistLoaded",
 
-  PlayerMaxPTS: 'DemuxController.maxpts',
-  PlayerSeekEnd: 'Player.seekend',
-  PlayerSpeedTo: 'Player.speedTo',
-  PlayerChangeRate: 'Player.changeRate',
-  PlayerChangeSrc:  'Player.changeSrc',
-  PlayerPlaying: 'Player.playing',
-  PlayerTimeUpdate: 'Player.timeUpdate',
-  PlayerbufferUpdate: 'Player.bufferupdate',
-  PlayerResetReady: 'Player.resetReady',
-  PlayerWait: 'Player.wait',
-  PlayerLoadNext: 'Player.loadNext',
-  PlayerOnPlay: 'Player.onPlay',
-  PlayerOnPause: 'Player.onPause',
-  PlayerOnSeek: 'Player.onSeek',
-  PlayerOnVolume: 'Player.onVolume',
-  PlayerReady: 'Player.ready',
+  AudioPlayerReady: "AudioPlayer.MSEReady",
+  AudioPlayerDataReady: "AudioPlayer.dataReady",
+  AudioPlayerWait: "AudioPlayer.wait",
+  AudioPlayerEnd: "AudioPlayer.end",
+  AudioPlayerPlaySuccess: "AudioPlayer.playSuccess",
+  AudioPlayerPlayFail: "AudioPlayer.playFail",
+
+  PlayerMaxPTS: "DemuxController.maxpts",
+  PlayerSeekEnd: "Player.seekend",
+  PlayerSpeedTo: "Player.speedTo",
+  PlayerChangeRate: "Player.changeRate",
+  PlayerChangeSrc: "Player.changeSrc",
+  PlayerPlaying: "Player.playing",
+  PlayerTimeUpdate: "Player.timeUpdate",
+  PlayerbufferUpdate: "Player.bufferupdate",
+  PlayerResetReady: "Player.resetReady",
+  PlayerWait: "Player.wait",
+  PlayerLoadNext: "Player.loadNext",
+  PlayerOnPlay: "Player.onPlay",
+  PlayerOnPause: "Player.onPause",
+  PlayerOnSeek: "Player.onSeek",
+  PlayerOnVolume: "Player.onVolume",
+  PlayerReady: "Player.ready",
   /**
    * Event handling during player playing
    * @event Player#play
    * @type {Player}
-   * 
-  */
-  PlayerPlay: 'Player.play',
-  PlayerReset: 'Player.reset',
-  PlayerLoadedMetaData: 'Player.loadedMetaData',
+   *
+   */
+  PlayerPlay: "Player.play",
+  PlayerReset: "Player.reset",
+  PlayerLoadedMetaData: "Player.loadedMetaData",
   /**
    * Event handling after playing ends
    * @event Player#end
    * @type {Player}
-   * 
-  */
-  PlayerEnd: 'Player.end',
+   *
+   */
+  PlayerEnd: "Player.end",
   /**
    * Event handling when playing pauses
    * @event Player#pause
    * @type {Player}
-   * 
-  */
-  PlayerPause: 'Player.pause',
+   *
+   */
+  PlayerPause: "Player.pause",
   /**
    * Event handling when player seeking data
    * @event Player#seeking
    * @type {Player}
-   * 
-  */
-  PlayerSeeking: 'Player.seeking',
-  PlayerAlert: 'Player.alert',
-  PlayerThrowError: 'Player.throwError',
+   *
+   */
+  PlayerSeeking: "Player.seeking",
+  PlayerAlert: "Player.alert",
+  PlayerThrowError: "Player.throwError",
 
-  StreamDataReady: 'StreamController.dataReady',
-}
+  StreamDataReady: "StreamController.dataReady"
+};
 
-export default Events
+export default Events;

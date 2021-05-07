@@ -5,11 +5,11 @@
  * @file: Action.js
  */
 
-import BaseClass from '../base/BaseClass';
-import Events from '../config/EventsConfig';
+import BaseClass from "../base/BaseClass";
+import Events from "../config/EventsConfig";
 export default class Action extends BaseClass {
   checkHanlder = null;
-  resetStatus = {processor: false, audioPlayer: false};
+  resetStatus = { processor: false, audioPlayer: false };
 
   constructor(options) {
     super(options);
@@ -24,10 +24,10 @@ export default class Action extends BaseClass {
   }
   bindEvent() {
     this.events.on(Events.ProcessorResetEnd, () => {
-      this.checkResetReady('processor');
+      this.checkResetReady("processor");
     });
     this.events.on(Events.AudioPlayerReady, () => {
-      this.checkResetReady('audioPlayer');
+      this.checkResetReady("audioPlayer");
     });
     this.events.on(Events.PlayerResetReady, () => {
       this.onResetReady();
@@ -43,21 +43,36 @@ export default class Action extends BaseClass {
     });
   }
   play(currentTime) {
-    this.logger.warn('play', 'play start');
+    this.logger.warn("play", "play start");
     this.sync(currentTime);
+  }
+  playerWait() {
+    this.imagePlayer.pause();
+    this.imagePlayer.status = "wait";
+    this.imagePlayer.ready = false;
+    this.events.emit(Events.ImagePlayerWait);
   }
   sync(time) {
     let player = this.player;
+    if (player.reseting) return;
+
     let audioPlayer = this.audioPlayer;
     let imagePlayer = this.imagePlayer;
     let aOffset = audioPlayer.offset;
     let vOffset = imagePlayer.offset;
+    let vEnd = imagePlayer.end;
     let minTime = Math.min(aOffset, vOffset);
     let maxTime = Math.max(aOffset, vOffset);
     if (!audioPlayer.need) {
       minTime = vOffset;
       maxTime = vOffset;
+    } else if (
+      audioPlayer.status === "waiting" ||
+      imagePlayer.status === "wait"
+    ) {
+      return;
     }
+    // console.log("sync", time, aOffset, vOffset, minTime, maxTime);
     let playbackRate = player.playbackRate;
     if (player.seeking) {
       player.seeking = false;
@@ -65,19 +80,28 @@ export default class Action extends BaseClass {
     if (player.reseting) {
       return;
     }
-    if (player.status === 'pause') {
+    if (player.status === "pause") {
       return;
     }
-    if (audioPlayer.status === 'waiting' || imagePlayer.status === 'wait') {
-      return;
-    }
-    if (player.status === 'end') {
+    if (player.status === "end") {
       if (!audioPlayer.paused) {
         audioPlayer.pause();
       }
       return;
     }
     this.setCurrentTime(time);
+    if (
+      this.player.options.isLive &&
+      ((!imagePlayer.imageData.pools[0].length &&
+        time < this.player.duration * 1000) ||
+        time > vEnd)
+    ) {
+      this.playerWait();
+      setTimeout(() => {
+        this.player.seek(time);
+      }, 1000);
+      return;
+    }
     if (time < minTime) {
       this.sync(minTime);
       return;
@@ -87,24 +111,33 @@ export default class Action extends BaseClass {
       this.events.once(Events.AudioPlayerPlaySuccess, () => {
         imagePlayer.render(vOffset);
       });
-      audioPlayer.playbackRate = playbackRate;
-      audioPlayer.play();
+      if (this.audioPlayer.status !== "playing") {
+        audioPlayer.playbackRate = playbackRate;
+        audioPlayer.play();
+      }
       return;
     }
     //only play image
     if (time >= vOffset && (!audioPlayer.need || time <= aOffset)) {
+      // console.log("play only image");
       imagePlayer.render(time);
       return;
     }
     //audio and image start play
     if (time > maxTime) {
-      this.audioPlayer.playbackRate = playbackRate;
-      this.audioPlayer.play();
+      if (Math.abs(this.audioPlayer.currentTime - time) > 200) {
+        this.audioPlayer.currentTime = time;
+      }
+      if (this.audioPlayer.status !== "playing") {
+        this.audioPlayer.playbackRate = playbackRate;
+        this.audioPlayer.play();
+      }
       imagePlayer.render(time);
     }
   }
   setCurrentTime(time) {
-    const currentTime = time - (this.player.startPts || 0);
+    const currentTime = time;
+    // console.log('setCurrentTime', time, this.player.startPts, currentTime);
     this.player.currentTime = currentTime;
     this.events.emit(Events.PlayerTimeUpdate, currentTime);
   }
@@ -121,10 +154,10 @@ export default class Action extends BaseClass {
     //video and audio have the same time period
     if (videoBuffered && audioBuffered) {
       this.logger.warn(
-        'seek',
+        "seek",
         `seek in buffer, time: ${time}, buffer: ${this.player.buffer()[0]}, ${
           this.player.buffer()[1]
-        }`,
+        }`
       );
       if (this.audioPlayer.need) {
         this.audioPlayer.onSeekedHandler = () => {
@@ -133,26 +166,36 @@ export default class Action extends BaseClass {
         this.audioPlayer.currentTime = time;
       } else {
         this.imagePlayer.render(time, false);
-        this.events.emit(Events.StreamDataReady);
+      }
+      this.events.emit(Events.StreamDataReady);
+      setTimeout(() => {
+        this.player.seeking = false;
+      }, 100);
+      // const currentPts = this.player.currentTime + this.player.startPts;
+      // if (this.player.options.keepCache && Math.abs(currentPts - time) > 200) {
+      if (this.player.options.keepCache) {
+        this.player.processController.reset();
+        // this.reset(time);
       }
     } else {
-      this.reset();
+      this.logger.warn("Action seek reset");
+      this.reset(time);
     }
   }
-  reset(value) {
-    this.logger.info('reset', 'reset start');
+  reset(value, destroy = false) {
+    this.logger.info("reset", "reset start");
     this.player.reseting = true;
     this.events.emit(Events.PlayerReset, value);
-    this.resetStatus = {processor: false, audioPlayer: false};
+    this.resetStatus = { processor: false, audioPlayer: false };
     this.player.processController.reset();
     this.player.streamController.reset();
     this.player.audioPlayer.reset(value);
-    this.player.imagePlayer.reset();
+    this.player.imagePlayer.reset(value, destroy);
     this.player.currentIndex = null;
   }
   checkResetReady(type) {
     let resetStatus = this.resetStatus;
-    if (type && typeof type === 'string') {
+    if (type && typeof type === "string") {
       resetStatus[type] = true;
       let keys = Object.keys(resetStatus);
       for (let i = 0; i < keys.length; i++) {
@@ -160,13 +203,13 @@ export default class Action extends BaseClass {
           return false;
         }
       }
-      this.logger.warn('checkResetReady', 'reset ready');
+      this.logger.warn("checkResetReady", "reset ready");
       this.events.emit(Events.PlayerResetReady);
     }
   }
   onResetReady() {
     this.player.reseting = false;
-    this.logger.info('onResetReady', 'reset Ready');
+    this.logger.info("onResetReady", "reset Ready");
     if (this.player.changing) {
       this.events.emit(Events.DataProcessorReady);
     }
@@ -176,18 +219,18 @@ export default class Action extends BaseClass {
   }
   onSeek(data, timer) {
     let currentTime = this.player.currentTime;
-    this.logger.info('onseek', currentTime, data, data.no, timer);
+    this.logger.info("onseek", currentTime, data, data.no, timer);
     if (
       data &&
       data.no &&
       Math.abs(currentTime - Math.floor(timer * 1000)) < 2
     ) {
       this.player.currentIndex = data.no;
-      this.logger.info('seektime:', data.no, timer, this.player.currentTime);
+      this.logger.info("seektime:", data.no, timer, this.player.currentTime);
       this.player.seekSegmentNo = data.no;
       this.player.streamController.startLoad(data.no);
     } else {
-      this.logger.warn('seek failue, not found data', currentTime, data, timer);
+      this.logger.warn("seek failue, not found data", currentTime, data, timer);
     }
   }
   clearDrawHanlder() {
@@ -197,9 +240,9 @@ export default class Action extends BaseClass {
   onRenderEnd(time, gap) {
     if (this.player.seekTime) {
       this.logger.info(
-        'onRenderEnd',
-        'seektoRenderTime:',
-        Date.now() - this.player.seekTime,
+        "onRenderEnd",
+        "seektoRenderTime:",
+        Date.now() - this.player.seekTime
       );
       this.player.seekTime = null;
     }
@@ -213,6 +256,7 @@ export default class Action extends BaseClass {
     let fragDuration = imagePlayer.fragDuration;
     let delay = aCurrentTime - vCurrentTime;
     let nextTime = 0;
+    // console.log("onRenderEnd", time, gap, vCurrentTime, aOffset, fragDuration);
     //no audio
     if (!audioPlayer.need) {
       this.drawNext(time + gap, Math.ceil(gap / playbackRate));
@@ -242,6 +286,16 @@ export default class Action extends BaseClass {
   drawNext(time, spanTime) {
     if (this.drawFrameHanlder) {
       this.clearDrawHanlder();
+    }
+    if (this.player.options.isLive) {
+      const lastSegment = this.player.loadData.segmentPool.getLast();
+      const { start, duration } = lastSegment;
+      const lastTime = (start - 15 * duration) * 1000;
+      // console.log("drawNext seek", lastTime, time);
+      if (lastTime > 0 && time < lastTime) {
+        this.player.seek(start * 1000);
+        return;
+      }
     }
     this.drawFrameHanlder = setTimeout(() => {
       this.sync(time);

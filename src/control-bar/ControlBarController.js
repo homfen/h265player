@@ -7,10 +7,10 @@
  * @author Jarry
  */
 
-import delegator from '../toolkit/Delegator.js';
-import BaseController from '../base/BaseController.js';
-import {CSSConfig} from '../config/CSSConfig';
-import Events from '../config/EventsConfig';
+import delegator from "../toolkit/Delegator.js";
+import BaseController from "../base/BaseController.js";
+import { CSSConfig } from "../config/CSSConfig";
+import Events from "../config/EventsConfig";
 
 const cssName = CSSConfig;
 
@@ -19,7 +19,7 @@ class ControlBarController extends BaseController {
   loadData = null;
 
   options = {
-    cssName: cssName,
+    cssName: cssName
   };
 
   constructor(options = {}) {
@@ -38,8 +38,8 @@ class ControlBarController extends BaseController {
       Object.assign(this, componentsController.getAllComponents());
     } else {
       Object.assign(this, {
-        BaseComponent: componentsController.getComponent('BaseComponent'),
-        waitingBar: componentsController.getComponent('waitingBar'),
+        BaseComponent: componentsController.getComponent("BaseComponent"),
+        waitingBar: componentsController.getComponent("waitingBar")
       });
     }
     this.container = this.controlBarContainer;
@@ -48,10 +48,14 @@ class ControlBarController extends BaseController {
   run() {
     this.drawLayout();
     this.bindEvent();
-    if (!this.player.autoPlay) {
-      this.events.emit(Events.ControlBarPause);
-    } else {
+    if (this.player.status === "playing") {
       this.events.emit(Events.ControlBarPlay);
+    } else {
+      if (!this.player.autoPlay) {
+        this.events.emit(Events.ControlBarPause);
+      } else {
+        this.events.emit(Events.ControlBarPlay);
+      }
     }
   }
 
@@ -107,9 +111,9 @@ class ControlBarController extends BaseController {
       Events.PlayerSeeking,
       Events.PlayerReset,
       Events.PlayerChangeRate,
-      Events.PlayerChangeSrc,
+      Events.PlayerChangeSrc
     ];
-    eventsArr.forEach(item => {
+    eventsArr.forEach((item) => {
       this.events.on(item, () => {
         this.waitingBar.showWaiting();
       });
@@ -127,8 +131,8 @@ class ControlBarController extends BaseController {
 
   bindPlayEvent() {
     this.events.on(Events.ControlBarPlay, () => {
-      if (this.pauseButton.data.status !== 'pause') {
-        this.pauseButton.data.status = 'pause';
+      if (this.pauseButton.data.status !== "pause") {
+        this.pauseButton.data.status = "pause";
       }
       this.replayButton.hide();
       this.playButton.hide();
@@ -136,8 +140,8 @@ class ControlBarController extends BaseController {
       this.bigPlayButton.hide();
     });
     this.events.on(Events.ControlBarPause, () => {
-      if (this.player.status !== 'pause') {
-        this.pauseButton.data.status = 'pause';
+      if (this.player.status !== "pause") {
+        this.pauseButton.data.status = "pause";
       }
       this.playButton.show();
       this.pauseButton.hide();
@@ -153,45 +157,58 @@ class ControlBarController extends BaseController {
     this.events.on(Events.PlayerPause, () => {
       this.events.emit(Events.ControlBarPause, this);
     });
-    this.events.on(Events.PlayerOnSeek, time => {
+    this.events.on(Events.PlayerOnSeek, (time) => {
       let duration = this.loadData.sourceData.duration;
       if (time < duration * 1000) {
         this.events.emit(Events.ControlBarPauseLoading);
       }
     });
     this.events.on(Events.ControlBarPauseLoading, () => {
-      if (this.pauseButton.data.status !== 'pauseloading') {
-        this.pauseButton.data.status = 'pauseloading';
+      if (this.pauseButton.data.status !== "pauseloading") {
+        this.pauseButton.data.status = "pauseloading";
       }
       this.replayButton.hide();
       this.playButton.hide();
       this.pauseButton.show();
     });
+    this.events.on(Events.PlayerSeekEnd, () => {
+      this.replayButton.hide();
+      if (this.player.status === "playing") {
+        this.playButton.hide();
+        this.pauseButton.show();
+      } else if (this.player.statusBeforeSeek === "playing") {
+        this.playButton.hide();
+        this.pauseButton.show();
+      } else {
+        this.playButton.show();
+        this.pauseButton.hide();
+      }
+    });
 
     delegator(this.options.$container).on(
-      'click',
-      '.' + cssName.playButton,
+      "click",
+      "." + cssName.playButton,
       () => {
-        if (this.player.status !== 'play') {
+        if (this.player.status !== "play") {
           this.events.emit(Events.PlayerOnPlay, this);
         }
-      },
+      }
     );
     delegator(this.options.$container).on(
-      'click',
-      '.' + cssName.pauseButton,
+      "click",
+      "." + cssName.pauseButton,
       () => {
-        if (this.player.status !== 'pause') {
+        if (this.player.status !== "pause") {
           this.events.emit(Events.PlayerOnPause, this);
         }
-      },
+      }
     );
     delegator(this.options.$container).on(
-      'click',
-      '.' + cssName.replayButton,
+      "click",
+      "." + cssName.replayButton,
       () => {
         this.events.emit(Events.PlayerOnSeek, this.player.startTime);
-      },
+      }
     );
   }
 
@@ -202,7 +219,7 @@ class ControlBarController extends BaseController {
 
   bindVolumeEvent() {
     this.volumeBar.initProps();
-    this.volumeBar.initVolumeSize();
+    this.volumeBar.initVolumeSize(this.player.muted);
     this.volumeBar.bindEvent();
   }
 

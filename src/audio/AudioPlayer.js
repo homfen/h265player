@@ -5,10 +5,10 @@
  * @file: AudioPlayer.js
  */
 
-import BaseClass from '../base/BaseClass.js';
-import JMuxer from '../lib/jmuxer.js';
-import Events from '../config/EventsConfig';
-import AudioContextPlayer from './AudioContextPlayer';
+import BaseClass from "../base/BaseClass.js";
+import JMuxer from "../lib/jmuxer.js";
+import Events from "../config/EventsConfig";
+import AudioContextPlayer from "./AudioContextPlayer";
 export default class AudioPlayer extends BaseClass {
   need = true;
   first = false;
@@ -25,55 +25,73 @@ export default class AudioPlayer extends BaseClass {
     this.createAudioMuxer();
     this.bindEvent();
     this.logger.info(
-      'audioDecoder',
-      this.useJMuxer ? 'JMuxer' : 'AudioContext',
+      "audioDecoder",
+      this.useJMuxer ? "JMuxer" : "AudioContext"
     );
   }
   bindEvent() {
     this.bindNodeEvent();
-    this.events.on(Events.PlayerMaxPTS, maxAudioPts => {
+    this.events.on(Events.PlayerMaxPTS, (maxAudioPts) => {
       if (this.currentPTS === maxAudioPts) {
         this.end = true;
       }
     });
   }
   bindNodeEvent() {
-    this.addEventListener('seeked', () => {
+    this.addEventListener("seeked", () => {
       if (this.onSeekedHandler) {
         this.onSeekedHandler();
       }
-      this.events.emit('AudioPlayer.seeked');
+      this.events.emit("AudioPlayer.seeked");
     });
-    this.addEventListener('canplaythrough', () => {
-      this.logger.info('canplaythrough');
+    this.addEventListener("canplaythrough", () => {
+      this.logger.info("canplaythrough");
       if (!this.ready) {
         this.ready = true;
-        this.status = 'ready';
-        this.logger.info('constructor', 'canplaythrough', 'ready');
+        this.status = "ready";
+        this.logger.info("constructor", "canplaythrough", "ready");
         this.events.emit(Events.AudioPlayerDataReady);
       }
     });
-    this.addEventListener('waiting', () => {
+    this.addEventListener("waiting", () => {
+      this.pause();
       this.ready = false;
-      if (!this.end) {
-        this.logger.warn(
-          'audioPlayer waiting',
-          this.player.currentTime,
-          this.currentPTS,
-        );
-        this.status = 'waiting';
-        this.events.emit(Events.AudioPlayerWait, 'audio');
-      } else {
+      const nearEnd =
+        Math.trunc(
+          this.options.player.duration - this.options.player.currentTime / 1000
+        ) < 2;
+      if (this.end || nearEnd) {
         if (!this.useJMuxer) {
           this.player.destroy();
         }
-        this.status = 'end';
-        this.events.emit(Events.AudioPlayerEnd, 'audio');
-        this.logger.info('audioPlayer end');
+        this.status = "end";
+        this.events.emit(Events.AudioPlayerEnd, "audio");
+        this.logger.info("audioPlayer end");
+      } else {
+        this.logger.warn(
+          "audioPlayer waiting",
+          this.player.currentTime,
+          this.currentPTS
+        );
+        this.status = "waiting";
+        this.events.emit(Events.AudioPlayerWait, "audio");
+        setTimeout(() => {
+          this.ready = true;
+          this.status = "ready";
+          this.events.emit(Events.AudioPlayerDataReady);
+        }, 200);
       }
     });
   }
   reset() {
+    if (!this.need) {
+      this.events.emit(Events.AudioPlayerReady);
+      return;
+    }
+
+    const volume = this.volume;
+    const playbackRate = this.playbackRate;
+    this.pause();
     this.lastData = null;
     this.first = false;
     this.offset = 0;
@@ -84,32 +102,35 @@ export default class AudioPlayer extends BaseClass {
     this.createAudioMuxer();
     this.bindNodeEvent();
     this.stime = null;
+    this.volume = volume;
+    this.playbackRate = playbackRate;
   }
   createNode() {
-    this.player = document.createElement('audio');
-    this.player.classList.add('goldplay__audio--player');
+    this.player = document.createElement("audio");
+    this.player.classList.add("goldplay__audio--player");
     this.parentNode.appendChild(this.player);
   }
   createAudioMuxer() {
     if (this.useJMuxer) {
       this.audioDecoder = new JMuxer({
         node: this.player,
-        mode: 'audio',
+        mode: "audio",
         debug: false,
         clearBuffer: true,
         flushingTime: 10,
-        onReady: this.onMSEReady.bind(this),
+        onReady: this.onMSEReady.bind(this)
       });
     } else {
       this.audioDecoder = new AudioContextPlayer({
         flushTime: 100,
         onReady: this.onMSEReady.bind(this),
+        player: this.options.player
       });
       this.player = this.audioDecoder;
     }
   }
   onMSEReady() {
-    this.logger.info('onMSEReady', 'AudioPlayerReady');
+    this.logger.info("onMSEReady", "AudioPlayerReady");
     this.events.emit(Events.AudioPlayerReady);
   }
   clear() {
@@ -117,28 +138,34 @@ export default class AudioPlayer extends BaseClass {
     this.audioDecoder = null;
   }
   play() {
-    if (this.status !== 'playing') {
-      this.status = 'playing';
+    if (this.status !== "playing") {
+      this.status = "playing";
       this.player
         .play()
         .then(() => {
           this.events.emit(Events.AudioPlayerPlaySuccess);
         })
-        .catch(error => {
-          this.logger.error('play', 'errorInfo:', error);
+        .catch((error) => {
+          this.logger.error("play", "errorInfo:", error);
           this.events.emit(Events.AudioPlayerPlayFail);
         });
     }
   }
+  get muted() {
+    return this.player.muted;
+  }
   set muted(value) {
     this.player.muted = !!value;
+  }
+  get playbackRate() {
+    return this.player.playbackRate;
   }
   set playbackRate(value) {
     this.player.playbackRate = value;
   }
   pause() {
-    if (this.status !== 'pause') {
-      this.status = 'pause';
+    if (this.status !== "pause") {
+      this.status = "pause";
       this.player.pause();
     }
   }
@@ -170,7 +197,7 @@ export default class AudioPlayer extends BaseClass {
     }
     this.need = true;
     if (!this.audioDecoder) {
-      this.logger.error('send', 'audioDecoder is:', this.audioDecoder);
+      this.logger.error("send", "audioDecoder is:", this.audioDecoder);
       return;
     }
     if (!this.stime) {
@@ -178,7 +205,7 @@ export default class AudioPlayer extends BaseClass {
     }
     data = this.format(data);
     if (data.audioEnd) {
-      this.logger.info('push', 'audioEnd');
+      this.logger.info("push", "audioEnd");
       this.feed(this.lastData);
       this.lastData = null;
       return;
@@ -204,9 +231,17 @@ export default class AudioPlayer extends BaseClass {
     }
   }
   feed(data) {
+    // this.logger.info(
+    // "AudioPlayer",
+    // "feed",
+    // data.PTS,
+    // data.data_byte.byteLength,
+    // data.duration
+    // );
     this.audioDecoder.feed({
+      pts: data.PTS,
       audio: data.data_byte,
-      duration: data.duration,
+      duration: data.duration
     });
     this.currentPTS = data.PTS;
   }
@@ -222,11 +257,14 @@ export default class AudioPlayer extends BaseClass {
   }
 
   isBuffered(time) {
-    if (!this.need) return true;
+    if (!this.need) {
+      return true;
+      // return !this.options.player.options.keepCache;
+    }
 
     let bufferList = [this.buffer()];
 
-    let index = bufferList.findIndex(item => {
+    let index = bufferList.findIndex((item) => {
       return time >= item.start && time < item.end;
     });
     return index !== -1;
@@ -247,7 +285,7 @@ export default class AudioPlayer extends BaseClass {
       let buffer = this.player.buffer();
       return {
         start: buffer.start + this.offset,
-        end: buffer.end + this.offset,
+        end: buffer.end + this.offset
       };
     }
   }

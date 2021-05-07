@@ -6,64 +6,69 @@
  * @author Jarry
  */
 
-import LoadData from './LoadData'
-import BaseController from '../base/BaseController'
+import LoadData from './LoadData';
+import BaseController from '../base/BaseController';
 
 export class DataController extends BaseController {
-  loadData = null
+  loadData = null;
   constructor(options) {
-    super()
-    this.options = options
+    super();
+    this.options = options;
   }
 
   setLoadData(...args) {
-    this.loadData = new LoadData(...args)
+    this.loadData = new LoadData(...args);
   }
 
   getLoadData() {
-    return this.loadData
+    return this.loadData;
   }
 
   getLoadDataBufferPool() {
-    return this.loadData.bufferPool
+    return this.loadData.bufferPool;
   }
 
   setLoadDataSourceData(sourceData) {
-    this.loadData.setSourceData(sourceData)
+    this.loadData.setSourceData(sourceData);
   }
 
   setLoadDataSegmentPool(segmentPool) {
-    this.loadData.setSegmentPool(segmentPool)
+    this.loadData.setSegmentPool(segmentPool);
   }
 
   startLoad(startTime) {
-    startTime = Math.max(startTime, 0)
-    this.startLoadData(startTime)
+    const type = this.options.player.options.type;
+    if (type === 'HLS') {
+      startTime = Math.max(startTime, 0);
+      this.startLoadData(startTime);
+    } else if (type === 'MP4') {
+      this.events.emit(Events.LoaderLoadFile);
+    }
   }
 
   startLoadData(startTime) {
-    this.loadData.startLoad(startTime)
+    this.loadData.startLoad(startTime);
   }
 
   clearLoadData() {
-    this.loadData.clear()
+    this.loadData.clear();
   }
 
   getDataInstance(type, ...args) {
     if (!type) {
-      return
+      return;
     }
     switch (type) {
       case 'load': {
         if (!this.loadData) {
-          this.setLoadData(...args)
+          this.setLoadData(...args);
         }
-        return this.loadData
+        return this.loadData;
       }
       default: {
-        return null
+        return null;
       }
     }
   }
 }
-export default DataController
+export default DataController;

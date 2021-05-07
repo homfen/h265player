@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <script src="../dist/h265player.js"></script>
+    <style>
+      .play-container {
+        width: 800px;
+        height: 600px;
+        /* background-color: #000; */
+        margin: 20px 0 0 100px;
+        float: left;
+      }
+
+      .inline {
+        display: inline-block;
+        width: 50px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="PlayerWrapper">
+      <h3>
+        H.265 Player <b>在线播放器Demo5</b
+        ><em class="demo1" id="Demo1">DEMO</em>
+      </h3>
+      <div class="play-container"></div>
+    </div>
+    <br clear="all" />
+    <br />
+    <script>
+      (function(win, doc) {
+        const Config = {
+          get basePath() {
+            let path = win.location.origin;
+            let pathname = win.location.pathname;
+            let demoIdx = pathname.lastIndexOf('/demo/');
+            return path + pathname.substr(0, demoIdx);
+          },
+          get buildPath() {
+            return this.basePath + '/dist/';
+          },
+          get libPath() {
+            return this.buildPath + 'lib/';
+          },
+          get src() {
+            return this.basePath + '/data/h264/video.mp4';
+            // return this.basePath + '/data/h264/test1.mp4';
+          },
+        };
+        let el = doc.querySelector('.play-container');
+        let player = new h265player(el, {
+          sourceURL: Config.src,
+          type: 'MP4',
+          codec: 0,
+          libPath: Config.libPath,
+          playBackRate: 1,
+          autoPlay: true,
+          duration: 386,
+        });
+        window.player = player;
+        // player.destroy()
+      })(window, document);
+    </script>
+  </body>
+</html>

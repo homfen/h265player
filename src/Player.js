@@ -19,6 +19,7 @@ import Action from './action/Action.js';
 import AudioPlayer from './audio/AudioPlayer.js';
 import {Config, READY} from './config/Config';
 import PlayerUtil from './utils/PlayerUtil';
+import Utils from './utils/Utils';
 import ComponentsController from './components/ComponentsController';
 import ControlBarController from './control-bar/ControlBarController';
 import DataProcessorController from './data-processor/dataProcessorController';
@@ -26,6 +27,9 @@ import StreamController from './action/StreamController.js';
 import ImagePlayer from './imageplayer/ImagePlayer.js';
 import webworkify from 'webworkify-webpack';
 import Events from './config/EventsConfig';
+
+let playerTimer = null;
+let bufferTimer = null;
 
 class Player extends BaseClass {
   mode = Config.mode;
@@ -35,6 +39,7 @@ class Player extends BaseClass {
   controlBarController = null;
   controlBarHeight = 50;
   alertError = null;
+  defaultAlert = true;
   dataController = null;
   demuxer = null;
   decoder = null;
@@ -57,7 +62,7 @@ class Player extends BaseClass {
   currentIndex = null;
   startIndex = 1;
   loadData = null;
-  paused = false;
+  paused = true;
   autoPlay = true;
   duration = 0;
   tsNumber = 0;
@@ -119,6 +124,13 @@ class Player extends BaseClass {
       options.playbackRate === undefined
         ? this.playbackRate
         : options.playbackRate;
+    this.defaultAlert = options.defaultAlert == null ? this.defaultAlert : options.defaultAlert;
+    if (options.muted != null) {
+      this.muted = options.muted;
+    }
+    if (this.options.codec == null) {
+      this.options.codec = 1;
+    }
   }
   setAlertError() {
     this.options.alertError = this.alertError = AlertError.getInstance({
@@ -218,7 +230,7 @@ class Player extends BaseClass {
     this.options.httpWorker = webworkify(require.resolve('./toolkit/HTTP.js'), {
       name: 'httpWorker',
     });
-    this.currentTime = this.startTime;
+    this.currentTime = this.startTime * 1000;
     this.addEl();
     this.setDataController();
     this.setLoadData();
@@ -281,17 +293,19 @@ class Player extends BaseClass {
     });
     this.events.on(Events.LoaderPlayListLoaded, data => {
       if (typeof this.options.afterLoadPlaylist == 'function') {
-        this.options.afterLoadPlaylist(this.laodData.sourceData);
+        this.options.afterLoadPlaylist(this.loadData.sourceData);
       }
-      let sourceData = data.loadData.sourceData;
-      this.duration = sourceData.duration;
-      this.tsNumber = sourceData.length;
+      const segmentPool = data.exeLoader.segmentPool;
+      this.duration = segmentPool.reduce((a, b) => a + b.duration, 0);
+      this.tsNumber = segmentPool.length;
       this.streamController.setBaseInfo({
         duration: this.duration,
         tsNumber: this.tsNumber,
       });
-      this.dataController.startLoad(this.startTime);
-      this.setStartTime(this.originStartTime);
+      if (this.imagePlayer.imageData.offset == null) {    
+        this.dataController.startLoad(this.startTime);
+        this.currentTime = this.startTime * 1000;
+      }
     });
     this.events.on(Events.LoadDataFirstLoaded, buffer => {
       this.logger.info('bindEvent', 'first data ready');
@@ -306,20 +320,30 @@ class Player extends BaseClass {
 
     this.events.on(Events.PlayerLoadedMetaData, (width, height) => {
       this.setCanvas();
-      this.resizeScreen(width, height);
+      this.dims = {width, height};
+      if (this.options.autoScale) {
+        this.resizeScreen(width, height);
+      }
+      this.$canvas.style.display = 'inline-block';
     });
     this.events.on(Events.PlayerEnd, () => {
       this.status = 'end';
     });
     this.events.on(Events.ImagePlayerBuffeUpdate, () => {
-      let buffer = this.buffer();
-      this.events.emit(Events.PlayerbufferUpdate, buffer);
+      clearTimeout(bufferTimer);
+      bufferTimer = setTimeout(() => {
+        let buffer = this.buffer();
+        const [start, end] = buffer;
+        this.events.emit(Events.PlayerbufferUpdate, [start / 1000, end / 1000]);
+      }, 100);
     });
     this.events.on(Events.PlayerOnSeek, time => {
       this.seek(Math.floor(time));
     });
     this.events.on(Events.PlayerAlert, content => {
-      this.alertError.show(content);
+      if (this.defaultAlert) {
+        this.alertError.show(content);
+      }
     });
     this.events.on(Events.PlayerThrowError, errors => {
       throwError.apply(this, errors);
@@ -329,10 +353,36 @@ class Player extends BaseClass {
         this.options.onTimeupdate(time);
       }
     });
+    this.events.on(Events.DemuxCodecError, () => {
+      this.processController.options.codec = this.options.codec === 1 ? 0 : 1;
+      this.changeSrc(this.options.sourceURL);
+    });
+    this.events.on(Events.PlayerSeekEnd, () => {
+      this.events.emit(Events.PlayerTimeUpdate, this.currentTime);
+    });
+
+    if (this.options.isLive) {
+      this.onVisibilityChange = () => {
+        if (document.hidden) {
+          // this.pause();
+        }
+        else {
+          // this.play();
+          const lastSegment = this.loadData.segmentPool.getLast();
+          const { start, duration } = lastSegment;
+          const lastTime = (start - 15 * duration) * 1000;
+          if (lastTime > 0 && this.currentTime < lastTime) {
+            this.seek(start * 1000);
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+    }
   }
-  reset(value) {
+  reset(value, destroy) {
+    this.startPts = null;
     if (this.action) {
-      this.action.reset(value);
+      this.action.reset(value, destroy);
     }
   }
   switchPlaylist(url, callback) {
@@ -348,6 +398,7 @@ class Player extends BaseClass {
   }
 
   setStartTime(time) {
+    // console.log('setStartTime', time);
     this.startTime = time;
   }
   /**
@@ -389,7 +440,7 @@ class Player extends BaseClass {
       firstData: false,
       audioPlayer: false,
     };
-    this.currentTime = this.startTime;
+    this.currentTime = this.startTime * 1000;
     this.imagePlayer.clear();
     this.reset(true);
     this.switchPlaylist(url, callback);
@@ -413,6 +464,12 @@ class Player extends BaseClass {
    * @name destroy
    * @description destroy the instance of Class Player*/
   destroy() {
+    if (this.status === 'playing') {
+      this.pause();
+    }
+    this.reset(true, true);
+    this.$canvas.remove();
+    this.$audio.remove();
     if (this.controlBarController) {
       this.controlBarController.destroy();
       delete this.controlBarController;
@@ -423,6 +480,10 @@ class Player extends BaseClass {
     }
     this.processController.destroy();
     this.loaderController.destroy();
+
+    if (this.options.isLive) {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    }
   }
 
   run() {
@@ -496,51 +557,63 @@ class Player extends BaseClass {
         this.startIndex,
       );
     }
-    this.streamController.startLoad(this.startIndex);
+    if (!this.seeking) {
+      this.streamController.startLoad(this.startIndex);
+    }
   }
 
   onDataReady() {
-    if (this.changing) {
-      this.changing = false;
-      this.play();
-    }
+    // if (this.changing) {
+    //   this.changing = false;
+    //   this.play();
+    // }
     // console.log('onDataReady', this.statusBeforeWait, this.status, this.imagePlayer.status, this.audioPlayer.status);
-    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && !this.paused) || (this.statusBeforeWait=== 'playing' && this.status === 'wait' && this.imagePlayer.status !== 'wait' && this.audioPlayer.status !== 'wait')) {
-      this.play();
+    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && this.paused) || (this.statusBeforeWait=== 'playing' && this.status === 'wait' && this.imagePlayer.status !== 'wait' && this.audioPlayer.status !== 'wait')) {
+      if (this.status !== 'playing') {
+        this.play();
+      }
     }
-    else {
+    else if (this.status !== 'playing') {
       this.events.emit(Events.ControlBarPause);
     }
   }
 
   buffer() {
     let videoBuffered = this.imagePlayer.buffer();
-    let audioPlayerBuffered = this.audioPlayer.buffer();
-    let sTime = Math.max(videoBuffered.start, audioPlayerBuffered.start);
-    let eTime = Math.min(videoBuffered.end, audioPlayerBuffered.end);
-    if (!this.audioPlayer.need) {
-      sTime = videoBuffered.start;
-      eTime = videoBuffered.end;
-    }
+    const {start, end} = videoBuffered;
+    const result = [start, end];
+    // console.log('buffer', result, start, end, this.startPts);
+    return result;
+    // let audioPlayerBuffered = this.audioPlayer.buffer();
+    // let sTime = Math.max(videoBuffered.start, audioPlayerBuffered.start);
+    // let eTime = Math.min(videoBuffered.end, audioPlayerBuffered.end);
+    // if (!this.audioPlayer.need) {
+    //   sTime = videoBuffered.start;
+    //   eTime = videoBuffered.end;
+    // }
 
-    if (sTime < eTime) {
-      return [sTime, eTime];
-    }
-    return [0, 0];
+    // if (sTime < eTime) {
+    //   return [sTime, eTime];
+    // }
+    // return [0, 0];
   }
   /**
    * @method
    * @name play
    * @description play the video*/
   play() {
-    this.logger.info('play', this.status);
-    if (this.status !== 'playing') {
-      this.logger.info('start play');
-      this.status = 'playing';
-      this.paused = false;
-      this.action.play(this.currentTime + (this.startPts || 0));
-      this.events.emit(Events.PlayerPlay, this);
-    }
+    if (this.seeking || this.reseting) return;
+    clearTimeout(playerTimer);
+    playerTimer = setTimeout(() => {
+      this.logger.info('play', this.status);
+      if (this.status !== 'playing' || (this.audioPlayer.need && this.audioPlayer.status !== 'playing')) {
+        this.logger.info('start play');
+        this.status = 'playing';
+        this.paused = false;
+        this.action.play(this.currentTime);
+        this.events.emit(Events.PlayerPlay, this);
+      }
+    }, 500);
   }
   on(name, callback) {
     this.events.on('Player.' + name, callback);
@@ -570,7 +643,7 @@ class Player extends BaseClass {
    * @param {number} time - the duration of seeking
    * @description seek time to play*/
   seek(time) {
-    if (time < this.startTime) {
+    if (time < this.startTime * 1000) {
       return;
     }
     if (time >= this.duration * 1000) {
@@ -581,8 +654,19 @@ class Player extends BaseClass {
     this.seekTime = Date.now();
     this.seeking = true;
     this.currentTime = time;
-    this.action.seek(time + this.startPts);
+    this.action.seek(time);
   }
+
+  fullScreen() {
+    this.componentsController.fullScreen.saveOriginPosition();
+    Utils.Fullscreen(this.$container);
+  }
+
+  exitFullScreen() {
+    this.componentsController.fullScreen.saveOriginPosition();
+    Utils.exitFullscreen();
+  }
+
   get muted() {
     return this.#muted;
   }
@@ -591,6 +675,13 @@ class Player extends BaseClass {
   }
   set playbackRate(value) {
     this.#playbackRate = value;
+    if (this.status === 'playing') {
+      this.pause();
+      this.events.emit(Events.ControlBarPauseLoading);
+      setTimeout(() => {
+        this.play();
+      }, 200);
+    }
   }
   get playbackRate() {
     return this.#playbackRate;
@@ -617,6 +708,23 @@ class Player extends BaseClass {
   }
   set volume(value) {
     this.audioPlayer.volume = value;
+  }
+  resize(elWidth, elHeight) {
+    this.$container.style.width = elWidth + 'px';
+    this.$container.style.height = elHeight + 'px';
+    const screen = PlayerUtil.createScreenContainer(this);
+    this.$screenContainer.style.width = screen.style.width;
+    this.$screenContainer.style.height = screen.style.height;
+    screen.remove();
+    if (this.options.autoScale) {
+      if (this.dims) {
+        const {width, height} = this.dims;
+        this.resizeScreen(width, height);
+      }
+    }
+    else {
+      this.imagePlayer.resetScreen();
+    }
   }
   resizeScreen(width, height) {
     Element.adaptSizeElement(

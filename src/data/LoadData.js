@@ -6,10 +6,10 @@
  * @author Jarry
  */
 
-import BaseClass from '../base/BaseClass';
-import BufferModel from '../model/BufferModel';
-import BufferPool from './BufferPool';
-import Events from '../config/EventsConfig';
+import BaseClass from "../base/BaseClass";
+import BufferModel from "../model/BufferModel";
+import BufferPool from "./BufferPool";
+import Events from "../config/EventsConfig";
 
 class LoadData extends BaseClass {
   bufferPool = [
@@ -28,32 +28,49 @@ class LoadData extends BaseClass {
   constructor(options = {}) {
     super();
     this.options = options;
+    this.player = options.player;
+    this.keepCache = options.player.options.keepCache;
     this.init();
   }
 
   init() {
     this.setBufferPool(new BufferPool());
     this.events.on(Events.LoadDataReadBufferByNo, (no, callback) => {
-      this.readBufferByNo(no, callback);
+      this.readBufferByNo(no, callback, true);
     });
     this.events.on(Events.LoadDataReadBuffer, (time, callback) => {
       this.readBuffer(time, callback);
     });
     this.events.on(Events.LoaderLoaded, (data, segment, type, time) => {
-      const buffer = this.createBuffer(
-        {
-          arrayBuffer: Uint8Array.from(data.arrayBuffer),
-        },
-        segment,
-      );
-      this.segmentLoaded(segment, buffer);
-      if (type === 'seek' && time === this.currentSeekTime) {
-        this.events.emit(Events.LoadDataSeek, buffer, time);
-        this.removeBufferByNo(buffer.no);
-        return;
-      }
-      if (time === this.startLoadTime) {
-        this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
+      const sourceType = this.options.player.options.type;
+      if (sourceType === "HLS") {
+        const buffer = this.createBuffer(
+          {
+            arrayBuffer: Uint8Array.from(data.arrayBuffer)
+          },
+          segment
+        );
+        this.segmentLoaded(segment, buffer);
+        if (type === "seek" && time === this.currentSeekTime) {
+          this.events.emit(Events.LoadDataSeek, buffer, time);
+          this.removeBufferByNo(buffer.no);
+          return;
+        }
+        if (time === this.startLoadTime) {
+          this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
+        }
+      } else if (sourceType === "MP4") {
+        const duration = this.options.player.options.duration;
+        const arrayBuffer = Uint8Array.from(data.arrayBuffer);
+        const buffer = {
+          start: 0,
+          end: duration,
+          no: 0,
+          duration,
+          blob: data.data,
+          arrayBuffer
+        };
+        this.events.emit(Events.LoadDataRead, new BufferModel(buffer));
       }
     });
   }
@@ -63,13 +80,13 @@ class LoadData extends BaseClass {
   }
 
   startLoad(time = 0) {
-    this.logger.info('startLoad', 'begin to load ts data', 'time:', time);
+    this.logger.info("startLoad", "begin to load ts data", "time:", time);
     if (isNaN(time)) {
-      this.logger.error('seekTime', 'seek', 'time:', time);
+      this.logger.error("seekTime", "seek", "time:", time);
       return;
     }
     this.startLoadTime = time;
-    this.loadSegmentByTime(time, 'start');
+    this.loadSegmentByTime(time, "start");
   }
 
   readBuffer(time, callback) {
@@ -86,14 +103,15 @@ class LoadData extends BaseClass {
     if (segment.no === this.options.player.currentIndex) {
       this.readBufferByNo(segment.no);
     }
-    if (segment.no < this.segmentPool.getLast().no) {
+    const lastNo = this.segmentPool.getLast().no;
+    if (segment.no < lastNo) {
       this.loadSegmentByNo(segment.no + 1);
     }
   }
 
   seekTime(time) {
     if (isNaN(time)) {
-      this.logger.error('seekTime', 'seek', 'time:', time);
+      this.logger.error("seekTime", "seek", "time:", time);
       return;
     }
     this.currentSeekTime = time;
@@ -104,7 +122,7 @@ class LoadData extends BaseClass {
       this.events.emit(Events.LoadDataSeek, buffer, time);
     } else {
       this.removeBufferPool(this.bufferPool.length);
-      this.loadSegmentByTime(time, 'seek');
+      this.loadSegmentByTime(time, "seek");
     }
   }
 
@@ -112,18 +130,19 @@ class LoadData extends BaseClass {
     if (isNaN(time)) {
       return;
     }
+    // console.log('segmentPool', this.segmentPool);
     const idx = this.segmentPool.indexOfByTime(time);
     if (idx >= 0) {
       const segment = this.segmentPool[idx];
       this.events.emit(Events.LoaderLoadFile, segment, type, time);
     } else {
       this.logger.error(
-        'loadSegmentByTime',
-        'time over',
-        'time:',
+        "loadSegmentByTime",
+        "time over",
+        "time:",
         time,
-        'type:',
-        type,
+        "type:",
+        type
       );
     }
   }
@@ -138,7 +157,7 @@ class LoadData extends BaseClass {
       no: segment.no,
       duration: segment.end - segment.start,
       // blob: data.blob,
-      arrayBuffer: data.arrayBuffer,
+      arrayBuffer: data.arrayBuffer
     };
     return new BufferModel(buffer);
   }
@@ -153,7 +172,11 @@ class LoadData extends BaseClass {
     if (!segment) {
       return;
     }
-    this.events.emit(Events.LoaderLoadFile, segment, 'play');
+    const buffer = this.bufferPool.getByKeyValue("no", no)[0];
+    if (!buffer) {
+      // console.log("loadSegmentByNo", no);
+      this.events.emit(Events.LoaderLoadFile, segment, "play");
+    }
   }
 
   /**
@@ -161,23 +184,24 @@ class LoadData extends BaseClass {
    * @param {number} time
    * @param {Function} callback [optional]
    */
-  readBufferByNo(no, callback) {
+  readBufferByNo(no, callback, fromStream) {
     if (!this.isValidSegmentNo(no)) {
       this.logger.error(
-        'readBufferByNo',
-        'check buffer no',
-        'is not valid no',
-        no,
+        "readBufferByNo",
+        "check buffer no",
+        "is not valid no",
+        no
       );
       return;
     }
     this.readBufferNo = no;
     callback =
       callback ||
-      function(buffer) {
+      function (buffer) {
         this.events.emit(Events.LoadDataRead, buffer);
       };
-    this.getBlobByNo(no, callback);
+    // console.log("readBufferByNo", no);
+    this.getBlobByNo(no, callback, fromStream);
   }
 
   /**
@@ -190,23 +214,29 @@ class LoadData extends BaseClass {
     return segment;
   }
 
-  getBlobByNo(no, callback) {
+  getBlobByNo(no, callback, fromStream) {
     if (isNaN(no)) {
-      this.logger.error('getBlobByNo', 'isNaN', 'no:', no);
+      this.logger.error("getBlobByNo", "isNaN", "no:", no);
       return;
     }
-    if (this.isBufferReading) {
-      this.logger.warn('getBlobByNo', 'isBufferReading', 'no:', no);
+    if (!this.keepCache && this.isBufferReading) {
+      this.logger.warn("getBlobByNo", "isBufferReading", "no:", no);
       return;
     }
     let buffer;
     this.isBufferReading = true;
-    buffer = this.bufferPool.getByKeyValue('no', no)[0];
+    buffer = this.bufferPool.getByKeyValue("no", no)[0];
 
-    if (typeof callback == 'function') {
+    if (typeof callback == "function") {
       callback.call(this, buffer);
       if (buffer) {
         this.removeBufferByNo(buffer.no);
+      } else {
+        this.logger.error("getBlobByNo", "buffer null", "no:", no);
+        if (fromStream) {
+          // this.player.streamController.currentIndex = no - 1;
+          this.loadSegmentByNo(no);
+        }
       }
     }
     this.isBufferReading = false;
@@ -214,6 +244,7 @@ class LoadData extends BaseClass {
   }
 
   addBufferPool(buffer) {
+    // console.log("addBufferPool", buffer.no);
     if (this.bufferPool.length) {
       if (this.bufferPool[0].no === buffer.no + 1) {
         this.bufferPool.unshift(buffer);
@@ -224,7 +255,7 @@ class LoadData extends BaseClass {
         this.bufferPool.push(buffer);
         return true;
       }
-      if (this.bufferPool.indexOfByKey('no', buffer.no)) {
+      if (this.bufferPool.indexOfByKey("no", buffer.no) > -1) {
         return true;
       }
       this.bufferPool.splice(0, this.bufferPool.length);
@@ -235,15 +266,20 @@ class LoadData extends BaseClass {
   removeBufferPool(idx) {
     // let buffer = this.bufferPool.get(idx)
     // remove all segment before the time
-    this.bufferPool.splice(0, idx + 1);
+    if (!this.keepCache) {
+      this.bufferPool.splice(0, idx + 1);
+    }
   }
 
   removeBufferByNo(no) {
-    const idx = this.bufferPool.indexOfByKey('no', no);
+    // console.log("removeBufferPool", no);
+    const idx = this.bufferPool.indexOfByKey("no", no);
     if (idx <= -1) {
       return;
     }
     this.removeBufferPool(idx);
+    const segment = this.getSegmentByNo(no);
+    segment.loaded = false;
 
     if (this.bufferPool.length) {
       // while buffer pool is full to read, load next one after last

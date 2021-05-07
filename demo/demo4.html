@@ -45,7 +45,7 @@
             return this.buildPath + 'lib/';
           },
           get src() {
-            return this.basePath + '/data/h264/test.m3u8';
+            return this.basePath + '/data/h264/video.m3u8';
           },
         };
         let el = doc.querySelector('.play-container');
@@ -55,6 +55,7 @@
           codec: 0,
           libPath: Config.libPath,
           playBackRate: 1,
+          controlBar: true,
         });
         // player.destroy()
       })(window, document);

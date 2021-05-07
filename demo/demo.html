@@ -54,8 +54,10 @@
           codec: 1,
           libPath: Config.libPath,
           playBackRate: 1,
+          controlBar: true,
           autoPlay: true,
         });
+        window.player = player;
         // player.destroy()
       })(window, document);
     </script>
