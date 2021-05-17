@@ -166,7 +166,8 @@ export default class StreamController extends BaseClass {
     // "tsno:",
     // no,
     // dataArray.length,
-    // poolIndex
+    // poolIndex,
+    // dataArray
     // );
     dataArray.forEach((data) => {
       data.no = no;
@@ -290,7 +291,7 @@ export default class StreamController extends BaseClass {
         return true;
       }
     }
-    return false;
+    return true;
   }
   onRead(data) {
     if (this.player.reseting) {

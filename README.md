@@ -1,6 +1,12 @@
 ## h265player
 
+[![npm](https://img.shields.io/npm/v/npm-auto-version.svg?maxAge=2592000)](https://www.npmjs.com/package/h265player)
+[![downloads](https://img.shields.io/npm/dt/h265player.svg?maxAge=2592000)](https://www.npmjs.com/package/h265player)
 [online demo](https://homfen.github.io/h265player/)
+
+#### Install:
+
+npm install h265player
 
 #### Usage：
 

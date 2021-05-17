@@ -449,7 +449,9 @@ class HLSLoader extends BaseLoader {
         segment.loaded = true;
         this.logger.info("loadFile", "read success", "data no:", data.name);
         this.state = state.IDLE;
-        this.events.emit(Events.LoaderLoaded, data, segment, type, time);
+        if (!this.player.changing) {
+          this.events.emit(Events.LoaderLoaded, data, segment, type, time);
+        }
       } else {
         this.logger.warn(
           "loadFile",

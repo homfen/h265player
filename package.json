@@ -1,6 +1,6 @@
 {
   "name": "h265player",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "h265player",
   "main": "dist/h265player.js",
   "directories": {

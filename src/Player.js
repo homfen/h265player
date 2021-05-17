@@ -8,25 +8,25 @@
  * @author Jarry
  */
 
-import getEvents from './toolkit/Events.js';
-import Element from './toolkit/Element.js';
-import AlertError from './error/AlertError';
-import {throwError} from './error/ThrowError';
-import BaseClass from './base/BaseClass.js';
-import LoaderController from './loader/LoaderController';
-import DataController from './data/DataController';
-import Action from './action/Action.js';
-import AudioPlayer from './audio/AudioPlayer.js';
-import {Config, READY} from './config/Config';
-import PlayerUtil from './utils/PlayerUtil';
-import Utils from './utils/Utils';
-import ComponentsController from './components/ComponentsController';
-import ControlBarController from './control-bar/ControlBarController';
-import DataProcessorController from './data-processor/dataProcessorController';
-import StreamController from './action/StreamController.js';
-import ImagePlayer from './imageplayer/ImagePlayer.js';
-import webworkify from 'webworkify-webpack';
-import Events from './config/EventsConfig';
+import getEvents from "./toolkit/Events.js";
+import Element from "./toolkit/Element.js";
+import AlertError from "./error/AlertError";
+import { throwError } from "./error/ThrowError";
+import BaseClass from "./base/BaseClass.js";
+import LoaderController from "./loader/LoaderController";
+import DataController from "./data/DataController";
+import Action from "./action/Action.js";
+import AudioPlayer from "./audio/AudioPlayer.js";
+import { Config, READY } from "./config/Config";
+import PlayerUtil from "./utils/PlayerUtil";
+import Utils from "./utils/Utils";
+import ComponentsController from "./components/ComponentsController";
+import ControlBarController from "./control-bar/ControlBarController";
+import DataProcessorController from "./data-processor/dataProcessorController";
+import StreamController from "./action/StreamController.js";
+import ImagePlayer from "./imageplayer/ImagePlayer.js";
+import webworkify from "webworkify-webpack";
+import Events from "./config/EventsConfig";
 
 let playerTimer = null;
 let bufferTimer = null;
@@ -49,7 +49,7 @@ class Player extends BaseClass {
   screenHeight = null;
   options = {};
   #libPath = Config.libPath;
-  readyStatus = {dataProcessor: false, firstData: false, audioPlayer: false};
+  readyStatus = { dataProcessor: false, firstData: false, audioPlayer: false };
   reseting = false;
   #currentTime = 0;
   #seek = false;
@@ -57,7 +57,7 @@ class Player extends BaseClass {
   #muted = false;
   maxBufferLength = READY.MAXBUFFERLENGTH;
   seekSegmentNo = -1;
-  status = 'init';
+  status = "init";
   loader = null;
   currentIndex = null;
   startIndex = 1;
@@ -95,7 +95,7 @@ class Player extends BaseClass {
   constructor(el, options = {}) {
     super();
     if (!el) {
-      this.logger.error('Please pass in a dom object as the display container');
+      this.logger.error("Please pass in a dom object as the display container");
     }
     this.el = el;
     Object.assign(this.options, options);
@@ -124,7 +124,8 @@ class Player extends BaseClass {
       options.playbackRate === undefined
         ? this.playbackRate
         : options.playbackRate;
-    this.defaultAlert = options.defaultAlert == null ? this.defaultAlert : options.defaultAlert;
+    this.defaultAlert =
+      options.defaultAlert == null ? this.defaultAlert : options.defaultAlert;
     if (options.muted != null) {
       this.muted = options.muted;
     }
@@ -136,19 +137,19 @@ class Player extends BaseClass {
     this.options.alertError = this.alertError = AlertError.getInstance({
       player: this,
       component: this.componentsController.alertBox,
-      events: this.options.events,
+      events: this.options.events
     });
   }
   setDataController() {
     this.dataController = DataController.getInstance({
       player: this,
-      events: this.options.events,
+      events: this.options.events
     });
   }
   setLoadData() {
     this.dataController.setLoadData({
       player: this,
-      events: this.options.events,
+      events: this.options.events
     });
     this.loadData = this.dataController.loadData;
   }
@@ -162,7 +163,7 @@ class Player extends BaseClass {
       loadData: this.loadData,
       bigPlayButtonColor: this.bigPlayButtonColor,
       player: this,
-      events: this.options.events,
+      events: this.options.events
     });
   }
   setControlBarController() {
@@ -171,23 +172,23 @@ class Player extends BaseClass {
       $screenContainer: this.$screenContainer,
       controlBar: this.controlBar,
       controlBarAutoHide: this.controlBarAutoHide,
-      player: this,
+      player: this
     });
     this.controlBarController = ControlBarController.getInstance(options);
   }
   setLoadController() {
     this.loaderController = LoaderController.getInstance(this.options.type, {
       player: this,
-      events: this.options.events,
+      events: this.options.events
     });
   }
   setProcessorController() {
     this.processController = new DataProcessorController({
-      type: 'ts',
+      type: "ts",
       codec: this.options.codec,
       libPath: this.#libPath,
       events: this.options.events,
-      player: this,
+      player: this
     });
   }
   setStreamController() {
@@ -196,7 +197,7 @@ class Player extends BaseClass {
       loadData: this.loadData,
       imagePlayer: this.imagePlayer,
       audioPlayer: this.audioPlayer,
-      player: this,
+      player: this
     });
   }
   setImagerPlayer() {
@@ -204,14 +205,14 @@ class Player extends BaseClass {
       events: this.options.events,
       canvas: this.$canvas,
       maxBufferLength: this.maxBufferLength,
-      player: this,
+      player: this
     });
   }
   setAudioPlayer() {
     this.audioPlayer = new AudioPlayer({
       player: this,
       events: this.options.events,
-      audioNode: this.$audio,
+      audioNode: this.$audio
     });
   }
   setAction() {
@@ -221,14 +222,14 @@ class Player extends BaseClass {
       imagePlayer: this.imagePlayer,
       loadData: this.loadData,
       audioPlayer: this.audioPlayer,
-      events: this.options.events,
+      events: this.options.events
     });
   }
   init() {
     this.controlBarHeight =
       this.options.controlBarHeight || this.controlBarHeight;
-    this.options.httpWorker = webworkify(require.resolve('./toolkit/HTTP.js'), {
-      name: 'httpWorker',
+    this.options.httpWorker = webworkify(require.resolve("./toolkit/HTTP.js"), {
+      name: "httpWorker"
     });
     this.currentTime = this.startTime * 1000;
     this.addEl();
@@ -239,7 +240,7 @@ class Player extends BaseClass {
     this.setComponentsController();
     this.setControlBarController();
     this.componentsController.setControlBarController(
-      this.controlBarController,
+      this.controlBarController
     );
     this.setProcessorController();
     this.setAlertError();
@@ -262,27 +263,27 @@ class Player extends BaseClass {
     this.events.on(Events.PlayerOnPause, () => {
       this.pause();
     });
-    this.events.on(Events.PlayerOnVolume, value => {
+    this.events.on(Events.PlayerOnVolume, (value) => {
       this.volume = value;
     });
     this.events.on(Events.DataProcessorReady, () => {
-      this.logger.info('bindEvent', 'decoder ready');
-      this.checkReady('dataProcessor');
+      this.logger.info("bindEvent", "decoder ready");
+      this.checkReady("dataProcessor");
     });
     this.events.on(Events.AudioPlayerReady, () => {
-      this.logger.info('bindEvent', 'audioPlayer ready');
+      this.logger.info("bindEvent", "audioPlayer ready");
       if (!this.seeking) {
-        this.checkReady('audioPlayer');
+        this.checkReady("audioPlayer");
       }
     });
     this.events.on(Events.PlayerReady, () => {
-      this.logger.info('bindEvent', 'player ready');
+      this.logger.info("bindEvent", "player ready");
       this.onReady();
     });
-    this.events.on(Events.PlayerSpeedTo, data => {
+    this.events.on(Events.PlayerSpeedTo, (data) => {
       this.changeSpeed(data);
     });
-    this.events.on(Events.PlayerChangeRate, data => {
+    this.events.on(Events.PlayerChangeRate, (data) => {
       this.changeRate(data);
     });
     this.events.on(Events.PlayerWait, () => {
@@ -291,8 +292,9 @@ class Player extends BaseClass {
     this.events.on(Events.PlayerPlay, () => {
       this.onPlay();
     });
-    this.events.on(Events.LoaderPlayListLoaded, data => {
-      if (typeof this.options.afterLoadPlaylist == 'function') {
+    this.events.on(Events.LoaderPlayListLoaded, (data) => {
+      this.changing = false;
+      if (typeof this.options.afterLoadPlaylist == "function") {
         this.options.afterLoadPlaylist(this.loadData.sourceData);
       }
       const segmentPool = data.exeLoader.segmentPool;
@@ -300,34 +302,34 @@ class Player extends BaseClass {
       this.tsNumber = segmentPool.length;
       this.streamController.setBaseInfo({
         duration: this.duration,
-        tsNumber: this.tsNumber,
+        tsNumber: this.tsNumber
       });
-      if (this.imagePlayer.imageData.offset == null) {    
+      if (this.imagePlayer.imageData.offset == null) {
         this.dataController.startLoad(this.startTime);
         this.currentTime = this.startTime * 1000;
       }
     });
-    this.events.on(Events.LoadDataFirstLoaded, buffer => {
-      this.logger.info('bindEvent', 'first data ready');
+    this.events.on(Events.LoadDataFirstLoaded, (buffer) => {
+      this.logger.info("bindEvent", "first data ready");
       this.startIndex = buffer.no;
       this.streamController.currentIndex = buffer.no;
-      this.checkReady('firstData');
+      this.checkReady("firstData");
     });
     this.events.on(Events.StreamDataReady, () => {
-      this.logger.info('bindEvent', 'dataReady');
+      this.logger.info("bindEvent", "dataReady");
       this.onDataReady();
     });
 
     this.events.on(Events.PlayerLoadedMetaData, (width, height) => {
       this.setCanvas();
-      this.dims = {width, height};
+      this.dims = { width, height };
       if (this.options.autoScale) {
         this.resizeScreen(width, height);
       }
-      this.$canvas.style.display = 'inline-block';
+      this.$canvas.style.display = "inline-block";
     });
     this.events.on(Events.PlayerEnd, () => {
-      this.status = 'end';
+      this.status = "end";
     });
     this.events.on(Events.ImagePlayerBuffeUpdate, () => {
       clearTimeout(bufferTimer);
@@ -337,18 +339,18 @@ class Player extends BaseClass {
         this.events.emit(Events.PlayerbufferUpdate, [start / 1000, end / 1000]);
       }, 100);
     });
-    this.events.on(Events.PlayerOnSeek, time => {
+    this.events.on(Events.PlayerOnSeek, (time) => {
       this.seek(Math.floor(time));
     });
-    this.events.on(Events.PlayerAlert, content => {
+    this.events.on(Events.PlayerAlert, (content) => {
       if (this.defaultAlert) {
         this.alertError.show(content);
       }
     });
-    this.events.on(Events.PlayerThrowError, errors => {
+    this.events.on(Events.PlayerThrowError, (errors) => {
       throwError.apply(this, errors);
     });
-    this.events.on(Events.PlayerTimeUpdate, time => {
+    this.events.on(Events.PlayerTimeUpdate, (time) => {
       if (this.options.onTimeupdate) {
         this.options.onTimeupdate(time);
       }
@@ -365,8 +367,7 @@ class Player extends BaseClass {
       this.onVisibilityChange = () => {
         if (document.hidden) {
           // this.pause();
-        }
-        else {
+        } else {
           // this.play();
           const lastSegment = this.loadData.segmentPool.getLast();
           const { start, duration } = lastSegment;
@@ -376,7 +377,7 @@ class Player extends BaseClass {
           }
         }
       };
-      document.addEventListener('visibilitychange', this.onVisibilityChange);
+      document.addEventListener("visibilitychange", this.onVisibilityChange);
     }
   }
   reset(value, destroy) {
@@ -408,6 +409,7 @@ class Player extends BaseClass {
    * @param {function} callback - Function to handle after changing the video source
    * @description Change the rate of the video source, such as 720P, HD...*/
   changeRate(data) {
+    this.logger.info("changeRate", data);
     this.pause();
     this.events.emit(Events.ControlBarPauseLoading, this);
     this.setStartTime((this.currentTime - 5000) / 1000);
@@ -417,7 +419,7 @@ class Player extends BaseClass {
     this.readyStatus = {
       dataProcessor: false,
       firstData: false,
-      audioPlayer: false,
+      audioPlayer: false
     };
     this.reset(true);
     this.switchPlaylist(data.url);
@@ -429,6 +431,7 @@ class Player extends BaseClass {
    * @param {function} callback - Function to handle after changing the video source
    * @description Change the source of the video to play*/
   changeSrc(url, callback) {
+    this.logger.info("changeSrc", url);
     this.pause();
     this.events.emit(Events.ControlBarPauseLoading, this);
     this.events.emit(Events.PlayerChangeSrc, this);
@@ -438,7 +441,7 @@ class Player extends BaseClass {
     this.readyStatus = {
       dataProcessor: false,
       firstData: false,
-      audioPlayer: false,
+      audioPlayer: false
     };
     this.currentTime = this.startTime * 1000;
     this.imagePlayer.clear();
@@ -464,7 +467,7 @@ class Player extends BaseClass {
    * @name destroy
    * @description destroy the instance of Class Player*/
   destroy() {
-    if (this.status === 'playing') {
+    if (this.status === "playing") {
       this.pause();
     }
     this.reset(true, true);
@@ -482,7 +485,7 @@ class Player extends BaseClass {
     this.loaderController.destroy();
 
     if (this.options.isLive) {
-      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      document.removeEventListener("visibilitychange", this.onVisibilityChange);
     }
   }
 
@@ -492,7 +495,7 @@ class Player extends BaseClass {
 
   checkReady(type) {
     let readyStatus = this.readyStatus;
-    if (type && typeof type === 'string') {
+    if (type && typeof type === "string") {
       readyStatus[type] = true;
       let keys = Object.keys(readyStatus);
       for (let i = 0; i < keys.length; i++) {
@@ -500,15 +503,15 @@ class Player extends BaseClass {
           return false;
         }
       }
-      this.logger.info('checkReady', 'player ready');
+      this.logger.info("checkReady", "player ready");
       this.events.emit(Events.PlayerReady);
       return true;
     } else {
       this.logger.error(
-        'checkReady',
-        'check ready',
-        'type is no correct, type:',
-        type,
+        "checkReady",
+        "check ready",
+        "type is no correct, type:",
+        type
       );
       return false;
     }
@@ -517,7 +520,7 @@ class Player extends BaseClass {
   addEl() {
     let $container, $screen, $audioContainer, $audio;
     if (!this.el) {
-      this.logger.error('addEl', 'not found el.', 'el:', this.options.el);
+      this.logger.error("addEl", "not found el.", "el:", this.options.el);
       return;
     }
 
@@ -540,10 +543,10 @@ class Player extends BaseClass {
     $container.appendChild($audioContainer);
   }
   onWait() {
-    this.logger.info('onWait', 'wait,wait,wait');
+    this.logger.info("onWait", "wait,wait,wait");
   }
   onPlay() {
-    this.logger.info('onPlay', 'play, play, play');
+    this.logger.info("onPlay", "play, play, play");
   }
   onReady() {
     if (!this.changing) {
@@ -551,10 +554,10 @@ class Player extends BaseClass {
     }
     if (this.changing) {
       this.logger.info(
-        'onReady',
-        'change ready',
-        'startIndex:',
-        this.startIndex,
+        "onReady",
+        "change ready",
+        "startIndex:",
+        this.startIndex
       );
     }
     if (!this.seeking) {
@@ -563,24 +566,32 @@ class Player extends BaseClass {
   }
 
   onDataReady() {
-    // if (this.changing) {
-    //   this.changing = false;
-    //   this.play();
-    // }
+    /*
+    if (this.changing) {
+      this.changing = false;
+      this.play();
+    }
+    */
     // console.log('onDataReady', this.statusBeforeWait, this.status, this.imagePlayer.status, this.audioPlayer.status);
-    if (this.statusBeforeSeek === 'playing' || (this.autoPlay && this.paused) || (this.statusBeforeWait=== 'playing' && this.status === 'wait' && this.imagePlayer.status !== 'wait' && this.audioPlayer.status !== 'wait')) {
-      if (this.status !== 'playing') {
+    if (
+      this.statusBeforeSeek === "playing" ||
+      (this.autoPlay && this.paused) ||
+      (this.statusBeforeWait === "playing" &&
+        this.status === "wait" &&
+        this.imagePlayer.status !== "wait" &&
+        this.audioPlayer.status !== "wait")
+    ) {
+      if (this.status !== "playing") {
         this.play();
       }
-    }
-    else if (this.status !== 'playing') {
+    } else if (this.status !== "playing") {
       this.events.emit(Events.ControlBarPause);
     }
   }
 
   buffer() {
     let videoBuffered = this.imagePlayer.buffer();
-    const {start, end} = videoBuffered;
+    const { start, end } = videoBuffered;
     const result = [start, end];
     // console.log('buffer', result, start, end, this.startPts);
     return result;
@@ -605,10 +616,13 @@ class Player extends BaseClass {
     if (this.seeking || this.reseting) return;
     clearTimeout(playerTimer);
     playerTimer = setTimeout(() => {
-      this.logger.info('play', this.status);
-      if (this.status !== 'playing' || (this.audioPlayer.need && this.audioPlayer.status !== 'playing')) {
-        this.logger.info('start play');
-        this.status = 'playing';
+      this.logger.info("play", this.status);
+      if (
+        this.status !== "playing" ||
+        (this.audioPlayer.need && this.audioPlayer.status !== "playing")
+      ) {
+        this.logger.info("start play");
+        this.status = "playing";
         this.paused = false;
         this.action.play(this.currentTime);
         this.events.emit(Events.PlayerPlay, this);
@@ -616,22 +630,22 @@ class Player extends BaseClass {
     }, 500);
   }
   on(name, callback) {
-    this.events.on('Player.' + name, callback);
+    this.events.on("Player." + name, callback);
   }
   off(name, callback) {
-    this.events.off('Player.' + name, callback);
+    this.events.off("Player." + name, callback);
   }
   once(name, callback) {
-    this.events.once('Player.' + name, callback);
+    this.events.once("Player." + name, callback);
   }
   /**
    * @method
    * @name pause
    * @description pause the video*/
   pause() {
-    if (this.status != 'pause') {
-      this.logger.info('pause');
-      this.status = 'pause';
+    if (this.status != "pause") {
+      this.logger.info("pause");
+      this.status = "pause";
       this.action.pause();
       this.paused = true;
       this.events.emit(Events.PlayerPause, this);
@@ -647,7 +661,7 @@ class Player extends BaseClass {
       return;
     }
     if (time >= this.duration * 1000) {
-      this.logger.info('seek', 'seek to time:', time);
+      this.logger.info("seek", "seek to time:", time);
       return;
     }
     this.statusBeforeSeek = this.status;
@@ -675,7 +689,7 @@ class Player extends BaseClass {
   }
   set playbackRate(value) {
     this.#playbackRate = value;
-    if (this.status === 'playing') {
+    if (this.status === "playing") {
       this.pause();
       this.events.emit(Events.ControlBarPauseLoading);
       setTimeout(() => {
@@ -710,19 +724,18 @@ class Player extends BaseClass {
     this.audioPlayer.volume = value;
   }
   resize(elWidth, elHeight) {
-    this.$container.style.width = elWidth + 'px';
-    this.$container.style.height = elHeight + 'px';
+    this.$container.style.width = elWidth + "px";
+    this.$container.style.height = elHeight + "px";
     const screen = PlayerUtil.createScreenContainer(this);
     this.$screenContainer.style.width = screen.style.width;
     this.$screenContainer.style.height = screen.style.height;
     screen.remove();
     if (this.options.autoScale) {
       if (this.dims) {
-        const {width, height} = this.dims;
+        const { width, height } = this.dims;
         this.resizeScreen(width, height);
       }
-    }
-    else {
+    } else {
       this.imagePlayer.resetScreen();
     }
   }
@@ -731,7 +744,7 @@ class Player extends BaseClass {
       width,
       height,
       this.$screenContainer,
-      this.$canvas,
+      this.$canvas
     );
   }
 }
